@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TTTT Mobile — CFalls Loader v3</title>
+  <title>TTTT Mobile — CFalls Loader (GitHub v4)</title>
   <style>
     :root{color-scheme:dark}
     html,body{margin:0;background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial}
     header{position:sticky;top:0;background:#000;border-bottom:1px solid #111;padding:10px 16px;z-index:10}
-    .wrap{max-width:860px;margin:0 auto;padding:16px 16px 160px}
+    .wrap{max-width:860px;margin:0 auto;padding:16px 16px 170px}
     .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
     .muted{color:#a7a7a7}
     .card{border:1px solid #2a2a2a;border-radius:14px;padding:14px;margin:12px 0;background:#0a0a0a}
@@ -41,28 +41,27 @@
 </header>
 
 <div class="wrap">
-
   <section id="home" class="screen active">
-    <h2>CFalls Loader v3</h2>
+    <h2>CFalls Loader (v4)</h2>
     <div class="card">
-      <div class="muted">Load button appears <b>on the Import screen</b>.</div>
+      <div class="muted">This build avoids inline onclick handlers (better compatibility on locked-down devices).</div>
       <div style="margin-top:10px">
-        <button class="btn" onclick="go('import')">Import / Paste Data</button>
-        <button class="btn" onclick="go('flower')">Flower</button>
+        <button class="btn" data-nav="import">Import / Paste Data</button>
+        <button class="btn" data-nav="flower">Flower</button>
       </div>
     </div>
     <div class="card"><b>Sales Floor only:</b> Filters to Room = Sales Floor + Category = Flower + Location contains Cuyahoga Falls.</div>
   </section>
 
   <section id="import" class="screen">
-    <button class="btn" onclick="go('home')">← Home</button>
+    <button class="btn" data-nav="home">← Home</button>
     <h2>Paste Data</h2>
     <div class="card">
       <div class="muted">Paste CSV or TSV (tab-delimited) including headers. Then tap <b>Load</b>.</div>
       <textarea id="paste" placeholder="Paste your table here..."></textarea>
       <div style="margin-top:10px">
-        <button class="btn" onclick="loadFromPaste()">Load</button>
-        <button class="btn" onclick="clearPaste()">Clear</button>
+        <button class="btn" id="loadBtn">Load</button>
+        <button class="btn" id="clearBtn">Clear</button>
       </div>
       <div class="muted small" style="margin-top:10px" id="loadmsg"></div>
     </div>
@@ -71,8 +70,8 @@
       <div class="inner">
         <div class="row">
           <div>
-            <button class="btn" onclick="loadFromPaste()">Load</button>
-            <button class="btn" onclick="clearPaste()">Clear</button>
+            <button class="btn" id="loadBtn2">Load</button>
+            <button class="btn" id="clearBtn2">Clear</button>
           </div>
           <div class="muted small" id="status">Ready</div>
         </div>
@@ -81,18 +80,17 @@
   </section>
 
   <section id="flower" class="screen">
-    <button class="btn" onclick="go('home')">← Home</button>
+    <button class="btn" data-nav="home">← Home</button>
     <h2>Flower (Sales Floor)</h2>
-
     <div class="card">
       <div class="grid2">
         <div>
           <div class="muted">Search</div>
-          <input id="q" type="text" placeholder="Type product or brand..." oninput="renderList()" />
+          <input id="q" type="text" placeholder="Type product or brand..." />
         </div>
         <div>
           <div class="muted">Sort</div>
-          <select id="sort" onchange="renderList()">
+          <select id="sort">
             <option value="total">Highest Total Terps</option>
             <option value="caryo">Highest Caryophyllene</option>
             <option value="thc">Highest THC</option>
@@ -100,7 +98,6 @@
           </select>
         </div>
       </div>
-
       <div class="muted" style="margin-top:10px">Quick terpene filters</div>
       <div id="chips"></div>
       <div class="muted" style="margin-top:10px" id="meta"></div>
@@ -111,7 +108,7 @@
   </section>
 
   <section id="product" class="screen">
-    <button class="btn" onclick="go('flower')">← Flower</button>
+    <button class="btn" data-nav="flower">← Flower</button>
     <h2 id="p_title">Product</h2>
     <div class="muted" id="p_sub">Brand · Size</div>
 
@@ -132,210 +129,232 @@
 
     <div class="card">🔔 <b>Reminder:</b> Check the patient’s <i>Dutchie Journal</i> for previous terpene preferences.</div>
   </section>
-
 </div>
 
 <div class="nav">
-  <button onclick="go('home')">🏠</button>
-  <button onclick="go('flower')">🌿</button>
-  <button onclick="go('import')">📥</button>
+  <button data-nav="home" aria-label="Home">🏠</button>
+  <button data-nav="flower" aria-label="Flower">🌿</button>
+  <button data-nav="import" aria-label="Import">📥</button>
 </div>
 
 <script>
-let ITEMS = [];
-let TERP_ORDER = [];
-let activeTerp = null;
+(() => {
+  'use strict';
 
-function go(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  document.getElementById('sticky').style.display = (id==='import') ? 'block' : 'none';
-  window.scrollTo({top:0,behavior:'instant'});
-  if(id==='flower') renderList();
-}
+  let ITEMS = [];
+  let TERP_ORDER = [];
+  let activeTerp = null;
 
-function detectDelimiter(text){
-  const first = (text.split(/?
+  const $ = (id) => document.getElementById(id);
+
+  function show(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    const el = $(id);
+    if(el) el.classList.add('active');
+    const sticky = $('sticky');
+    if(sticky) sticky.style.display = (id==='import') ? 'block' : 'none';
+    window.scrollTo({top:0,behavior:'instant'});
+    if(id==='flower') renderList();
+  }
+
+  function detectDelimiter(text){
+    const first = (text.split(/?
 /)[0]||'');
-  const tabs = (first.match(/	/g)||[]).length;
-  const commas = (first.match(/,/g)||[]).length;
-  return tabs>=commas ? '	' : ',';
-}
+    const tabs = (first.match(/	/g)||[]).length;
+    const commas = (first.match(/,/g)||[]).length;
+    return tabs>=commas ? '	' : ',';
+  }
 
-function pct(s){
-  if(s==null) return null;
-  const str = String(s).replace('%','').trim();
-  if(!str) return null;
-  const n = parseFloat(str);
-  return isNaN(n)?null:n;
-}
+  function pct(s){
+    if(s==null) return null;
+    const str = String(s).replace('%','').trim();
+    if(!str) return null;
+    const n = parseFloat(str);
+    return Number.isFinite(n) ? n : null;
+  }
 
-function buildChips(){
-  const chipBox = document.getElementById('chips');
-  chipBox.innerHTML='';
-  const quick = ['BetaCaryphyllene','Limonene','BetaMyrcene','Linalool','AlphaPinene','BetaPinene','Humulene','Terpinolene'];
-  quick.filter(t=>TERP_ORDER.includes(t)).forEach(t=>{
-    const s=document.createElement('span');
-    s.className='pill';
-    s.style.cursor='pointer';
-    s.textContent = t.replace('Beta','β-').replace('Alpha','α-');
-    s.onclick=()=>{ activeTerp = (activeTerp===t?null:t); renderList(); };
-    chipBox.appendChild(s);
-  });
-}
+  function buildChips(){
+    const chipBox = $('chips');
+    chipBox.innerHTML='';
+    const quick = ['BetaCaryphyllene','Limonene','BetaMyrcene','Linalool','AlphaPinene','BetaPinene','Humulene','Terpinolene'];
+    quick.filter(t=>TERP_ORDER.includes(t)).forEach(t=>{
+      const s=document.createElement('span');
+      s.className='pill';
+      s.style.cursor='pointer';
+      s.textContent = t.replace('Beta','β-').replace('Alpha','α-');
+      s.addEventListener('click', ()=>{ activeTerp = (activeTerp===t?null:t); renderList(); });
+      chipBox.appendChild(s);
+    });
+  }
 
-function parseText(text){
-  text = text.trim();
-  if(!text) return {items:[], terpCols:[]};
-  const delim = detectDelimiter(text);
-  const lines = text.split(/?
+  function parseText(text){
+    text = (text||'').trim();
+    if(!text) return {items:[], terpCols:[]};
+    const delim = detectDelimiter(text);
+    const lines = text.split(/?
 /).filter(l=>l.trim());
-  const headers = lines[0].split(delim).map(s=>s.trim());
-  const rows = lines.slice(1).map(l=>{
-    const parts = l.split(delim);
-    while(parts.length < headers.length) parts.push('');
-    return Object.fromEntries(headers.map((h,i)=>[h, (parts[i]??'').trim()]));
-  });
+    const headers = lines[0].split(delim).map(s=>s.trim());
+    const rows = lines.slice(1).map(l=>{
+      const parts = l.split(delim);
+      while(parts.length < headers.length) parts.push('');
+      const obj = {};
+      headers.forEach((h,i)=> obj[h] = (parts[i]??'').trim());
+      return obj;
+    });
 
-  const key = (name)=> headers.find(h=>h.toLowerCase()===name.toLowerCase());
-  const kProduct = key('Product') || key('Item') || key('Name');
-  const kLocation = key('Location') || key('Store');
-  const kCategory = key('Category');
-  const kRoom = key('Room');
-  const kTHC = key('THC') || key('THC %');
-  const kTotal = key('TotalTerpenes') || key('Total Terpenes') || key('Total Terps');
+    const key = (name)=> headers.find(h=>h.toLowerCase()===name.toLowerCase());
+    const kProduct = key('Product') || key('Item') || key('Name');
+    const kLocation = key('Location') || key('Store');
+    const kCategory = key('Category');
+    const kRoom = key('Room');
+    const kTHC = key('THC') || key('THC %');
+    const kTotal = key('TotalTerpenes') || key('Total Terpenes') || key('Total Terps');
 
-  const terpCols = headers.filter(h=>![kProduct,kLocation,kCategory,kRoom,kTHC,kTotal].includes(h));
-  const out=[];
+    const terpCols = headers.filter(h=>![kProduct,kLocation,kCategory,kRoom,kTHC,kTotal].includes(h));
+    const out=[];
 
-  rows.forEach(r=>{
-    const loc = (r[kLocation]||'');
-    const room = (r[kRoom]||'');
-    const cat = (r[kCategory]||'');
-    if(!loc.toLowerCase().includes('cuyahoga')) return;
-    if(room.toLowerCase().replace(/\s+/g,' ')!=='sales floor') return;
-    if(!cat.toLowerCase().includes('flower')) return;
+    rows.forEach(r=>{
+      const loc = (r[kLocation]||'');
+      const room = (r[kRoom]||'');
+      const cat = (r[kCategory]||'');
+      if(!loc.toLowerCase().includes('cuyahoga')) return;
+      if(room.toLowerCase().replace(/\s+/g,' ')!=='sales floor') return;
+      if(!cat.toLowerCase().includes('flower')) return;
 
-    const prod = (r[kProduct]||'');
-    const parts = prod.split('|').map(x=>x.trim());
-    const brand = parts[0]||'';
-    const name = parts[1]||prod;
-    const size = parts[2]||'';
+      const prod = (r[kProduct]||'');
+      const parts = prod.split('|').map(x=>x.trim());
+      const brand = parts[0]||'';
+      const name = parts[1]||prod;
+      const size = parts[2]||'';
 
-    const terps={};
-    terpCols.forEach(tc=>{ terps[tc]=pct(r[tc]); });
+      const terps={};
+      terpCols.forEach(tc=>{ terps[tc]=pct(r[tc]); });
 
-    let total = pct(r[kTotal]);
-    if(total==null){ total = Object.values(terps).reduce((a,v)=>a+(v||0),0); }
+      let total = pct(r[kTotal]);
+      if(total==null){ total = Object.values(terps).reduce((a,v)=>a+(v||0),0); }
 
-    out.push({brand,product:name,size,thc:pct(r[kTHC]),totalTerps:total,totalTerpsProvided:(pct(r[kTotal])!=null),terpenes:terps});
-  });
+      out.push({brand,product:name,size,thc:pct(r[kTHC]),totalTerps:total,totalTerpsProvided:(pct(r[kTotal])!=null),terpenes:terps});
+    });
 
-  return {items: out, terpCols};
-}
-
-function renderList(){
-  const empty = document.getElementById('empty');
-  if(!ITEMS.length){
-    empty.style.display='block';
-    document.getElementById('list').innerHTML='';
-    document.getElementById('meta').textContent='';
-    return;
-  }
-  empty.style.display='none';
-
-  const q = (document.getElementById('q').value||'').toLowerCase().trim();
-  const sort = document.getElementById('sort').value;
-  let arr = ITEMS.slice();
-
-  if(q){
-    arr = arr.filter(it => (it.product||'').toLowerCase().includes(q) || (it.brand||'').toLowerCase().includes(q));
-  }
-  if(activeTerp){
-    arr = arr.filter(it => (it.terpenes && (it.terpenes[activeTerp]||0) > 0));
+    return {items: out, terpCols};
   }
 
-  if(sort==='total') arr.sort((a,b)=> (b.totalTerps||0)-(a.totalTerps||0));
-  else if(sort==='caryo') arr.sort((a,b)=> ((b.terpenes?.BetaCaryphyllene)||0)-((a.terpenes?.BetaCaryphyllene)||0));
-  else if(sort==='thc') arr.sort((a,b)=> (b.thc||0)-(a.thc||0));
-  else arr.sort((a,b)=> (a.product||'').localeCompare(b.product||''));
+  function renderList(){
+    const empty = $('empty');
+    const list = $('list');
+    const meta = $('meta');
 
-  document.getElementById('meta').textContent = `Showing ${arr.length} item(s)` + (activeTerp?` · Filter: ${activeTerp}`:'');
+    if(!ITEMS.length){
+      empty.style.display='block';
+      list.innerHTML='';
+      meta.textContent='';
+      return;
+    }
+    empty.style.display='none';
 
-  const list = document.getElementById('list');
-  list.innerHTML='';
+    const q = ($('q').value||'').toLowerCase().trim();
+    const sort = $('sort').value;
+    let arr = ITEMS.slice();
 
-  const top3 = (it)=>{
-    const entries = Object.entries(it.terpenes||{}).filter(([k,v])=>v && v>0);
-    entries.sort((a,b)=>b[1]-a[1]);
-    return entries.slice(0,3).map(x=>x[0]);
-  };
+    if(q){
+      arr = arr.filter(it => (it.product||'').toLowerCase().includes(q) || (it.brand||'').toLowerCase().includes(q));
+    }
+    if(activeTerp){
+      arr = arr.filter(it => (it.terpenes && (it.terpenes[activeTerp]||0) > 0));
+    }
 
-  arr.forEach(it=>{
-    const div=document.createElement('div');
-    div.className='it';
-    const t3 = top3(it);
-    div.innerHTML = `
-      <div class="row">
-        <div>
-          <b>${it.product||'Unnamed'}</b>
-          <div class="muted">${it.brand||''}${it.size?` · ${it.size}`:''}</div>
+    if(sort==='total') arr.sort((a,b)=> (b.totalTerps||0)-(a.totalTerps||0));
+    else if(sort==='caryo') arr.sort((a,b)=> ((b.terpenes?.BetaCaryphyllene)||0)-((a.terpenes?.BetaCaryphyllene)||0));
+    else if(sort==='thc') arr.sort((a,b)=> (b.thc||0)-(a.thc||0));
+    else arr.sort((a,b)=> (a.product||'').localeCompare(b.product||''));
+
+    meta.textContent = `Showing ${arr.length} item(s)` + (activeTerp?` · Filter: ${activeTerp}`:'');
+    list.innerHTML='';
+
+    const top3 = (it)=>{
+      const entries = Object.entries(it.terpenes||{}).filter(([k,v])=>v && v>0);
+      entries.sort((a,b)=>b[1]-a[1]);
+      return entries.slice(0,3).map(x=>x[0]);
+    };
+
+    arr.forEach(it=>{
+      const div=document.createElement('div');
+      div.className='it';
+      const t3 = top3(it);
+      div.innerHTML = `
+        <div class="row">
+          <div>
+            <b>${it.product||'Unnamed'}</b>
+            <div class="muted">${it.brand||''}${it.size?` · ${it.size}`:''}</div>
+          </div>
+          <div>
+            <span class="pill">THC ${it.thc!=null?it.thc.toFixed(2):'—'}%</span>
+            <span class="pill">Terps ${it.totalTerps!=null?it.totalTerps.toFixed(2):'—'}%</span>
+          </div>
         </div>
-        <div>
-          <span class="pill">THC ${it.thc!=null?it.thc.toFixed(2):'—'}%</span>
-          <span class="pill">Terps ${it.totalTerps!=null?it.totalTerps.toFixed(2):'—'}%</span>
-        </div>
-      </div>
-      <div style="margin-top:6px">${t3.map(t=>`<span class="pill">${t}</span>`).join('')}</div>
-      <div style="margin-top:10px"><button class="btn">View Details</button></div>
-    `;
-    div.querySelector('button').onclick=()=>openProduct(it);
-    list.appendChild(div);
+        <div style="margin-top:6px">${t3.map(t=>`<span class="pill">${t}</span>`).join('')}</div>
+        <div style="margin-top:10px"><button class="btn">View Details</button></div>
+      `;
+      div.querySelector('button').addEventListener('click', ()=>openProduct(it));
+      list.appendChild(div);
+    });
+  }
+
+  function openProduct(it){
+    $('p_title').textContent = it.product || 'Product';
+    $('p_sub').textContent = `${it.brand||''}${it.size?` · ${it.size}`:''}`;
+    $('p_thc').textContent = `THC ${it.thc!=null?it.thc.toFixed(2):'—'}%`;
+    $('p_tt').textContent = `Total Terps ${it.totalTerps!=null?it.totalTerps.toFixed(2):'—'}%` + (it.totalTerpsProvided?'':' (calc)');
+
+    const tbl = $('p_tbl');
+    tbl.innerHTML='';
+    TERP_ORDER.forEach(t=>{
+      const v = (it.terpenes||{})[t];
+      const row=document.createElement('div');
+      row.className='row';
+      const muted = (v==null);
+      row.innerHTML = `<div class="${muted?'muted':''}">${t}</div><div class="${muted?'muted':''}">${v==null?'—':v.toFixed(2)+'%'}</div>`;
+      tbl.appendChild(row);
+    });
+
+    show('product');
+  }
+
+  function clearPaste(){
+    $('paste').value='';
+    $('loadmsg').textContent='';
+    $('status').textContent='Ready';
+  }
+
+  function loadFromPaste(){
+    $('status').textContent='Loading…';
+    const res = parseText($('paste').value);
+    ITEMS = res.items;
+    TERP_ORDER = res.terpCols.slice();
+    activeTerp = null;
+    buildChips();
+
+    $('loadmsg').textContent = ITEMS.length ? `Loaded ${ITEMS.length} rows.` : 'No matching CFalls Sales Floor Flower rows found.';
+    $('status').textContent = ITEMS.length ? 'Loaded' : 'No matches';
+
+    if(ITEMS.length){ show('flower'); }
+  }
+
+  // Wire up navigation buttons (no inline handlers)
+  document.querySelectorAll('[data-nav]').forEach(btn=>{
+    btn.addEventListener('click', ()=> show(btn.getAttribute('data-nav')));
   });
-}
 
-function openProduct(it){
-  document.getElementById('p_title').textContent = it.product || 'Product';
-  document.getElementById('p_sub').textContent = `${it.brand||''}${it.size?` · ${it.size}`:''}`;
-  document.getElementById('p_thc').textContent = `THC ${it.thc!=null?it.thc.toFixed(2):'—'}%`;
-  document.getElementById('p_tt').textContent = `Total Terps ${it.totalTerps!=null?it.totalTerps.toFixed(2):'—'}%` + (it.totalTerpsProvided?'':' (calc)');
-  document.getElementById('p_dot').style.left = '50%';
+  $('q').addEventListener('input', renderList);
+  $('sort').addEventListener('change', renderList);
+  $('loadBtn').addEventListener('click', loadFromPaste);
+  $('loadBtn2').addEventListener('click', loadFromPaste);
+  $('clearBtn').addEventListener('click', clearPaste);
+  $('clearBtn2').addEventListener('click', clearPaste);
 
-  const tbl = document.getElementById('p_tbl');
-  tbl.innerHTML='';
-  TERP_ORDER.forEach(t=>{
-    const v = (it.terpenes||{})[t];
-    const row=document.createElement('div');
-    row.className='row';
-    const muted = (v==null);
-    row.innerHTML = `<div class="${muted?'muted':''}">${t}</div><div class="${muted?'muted':''}">${v==null?'—':v.toFixed(2)+'%'}</div>`;
-    tbl.appendChild(row);
-  });
-
-  go('product');
-}
-
-function clearPaste(){
-  document.getElementById('paste').value='';
-  document.getElementById('loadmsg').textContent='';
-  document.getElementById('status').textContent='Ready';
-}
-
-function loadFromPaste(){
-  document.getElementById('status').textContent='Loading…';
-  const t = document.getElementById('paste').value;
-  const res = parseText(t);
-  ITEMS = res.items;
-  TERP_ORDER = res.terpCols.slice();
-  activeTerp = null;
-  buildChips();
-  document.getElementById('loadmsg').textContent = ITEMS.length ? `Loaded ${ITEMS.length} rows.` : 'No matching CFalls Sales Floor Flower rows found.';
-  document.getElementById('status').textContent = ITEMS.length ? 'Loaded' : 'No matches';
-  if(ITEMS.length){ go('flower'); }
-}
-
-// start with sticky hidden (only show on import)
-document.getElementById('sticky').style.display='none';
+  // Start state
+  $('sticky').style.display='none';
+})();
 </script>
 </body>
 </html>

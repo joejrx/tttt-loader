@@ -44,74 +44,10 @@
       <tr>
         <th>Product</th>
         <th class="num">THC%</th>
+        <th class="num">Total Terps</th>
 
         <th class="num">Caryophyllene</th>
         <th class="num">Myrcene</th>
         <th class="num">Limonene</th>
         <th class="num">Pinene</th>
         <th class="num">Linalool</th>
-        <th class="num">Terpinolene</th>
-
-        <th class="num">Total Terps</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-<script>
-  // -----------------------------------------
-  // CFALLS SAMPLE DATA (HARDCODED / PROTOTYPE)
-  // Terp values are in % (e.g., 0.42 means 0.42%)
-  // -----------------------------------------
-  const data = [
-    { product: "Wedding Cake",        thc: 27.4, cary: 0.89, myr: 0.25, lim: 0.42, pin: 0.08, lin: 0.06, ter: 0.00 },
-    { product: "GMO",                 thc: 29.1, cary: 1.12, myr: 0.44, lim: 0.18, pin: 0.04, lin: 0.07, ter: 0.00 },
-    { product: "Blueberry Muffin",    thc: 23.8, cary: 0.41, myr: 0.36, lim: 0.55, pin: 0.06, lin: 0.10, ter: 0.02 },
-    { product: "Apples & Bananas",    thc: 30.2, cary: 0.72, myr: 0.29, lim: 0.60, pin: 0.07, lin: 0.05, ter: 0.03 }
-  ];
-
-  // Define terp columns once so totals + rendering stay consistent.
-  const terpKeys = ["cary", "myr", "lim", "pin", "lin", "ter"];
-
-  // Normalize numbers + compute totals
-  data.forEach(item => {
-    // ensure all terp keys exist and are numbers
-    terpKeys.forEach(k => item[k] = Number(item[k] ?? 0) || 0);
-
-    const total = terpKeys.reduce((sum, k) => sum + item[k], 0);
-    item.total = Number(total.toFixed(2));
-  });
-
-  // Sort by Total Terps DESC, then Caryophyllene DESC
-  data.sort((a, b) => {
-    if (b.total !== a.total) return b.total - a.total;
-    return b.cary - a.cary;
-  });
-
-  // Render
-  const tbody = document.querySelector("#tbl tbody");
-  tbody.innerHTML = "";
-
-  const fmt = (n) => Number(n).toFixed(2);
-
-  data.forEach(row => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${row.product}</td>
-      <td class="num">${row.thc.toFixed(1)}%</td>
-
-      <td class="num">${fmt(row.cary)}</td>
-      <td class="num">${fmt(row.myr)}</td>
-      <td class="num">${fmt(row.lim)}</td>
-      <td class="num">${fmt(row.pin)}</td>
-      <td class="num">${fmt(row.lin)}</td>
-      <td class="num">${fmt(row.ter)}</td>
-
-      <td class="num"><strong>${fmt(row.total)}</strong></td>
-    `;
-    tbody.appendChild(tr);
-  });
-</script>
-
-</body>
-</html>

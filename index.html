@@ -3,33 +3,22 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TTTT Mobile — CFalls Loader (GitHub v4)</title>
+  <title>TTTT Mobile — CFalls Loader (v4.1)</title>
   <style>
     :root{color-scheme:dark}
     html,body{margin:0;background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial}
     header{position:sticky;top:0;background:#000;border-bottom:1px solid #111;padding:10px 16px;z-index:10}
-    .wrap{max-width:860px;margin:0 auto;padding:16px 16px 170px}
+    .wrap{max-width:860px;margin:0 auto;padding:16px 16px 120px}
     .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
     .muted{color:#a7a7a7}
     .card{border:1px solid #2a2a2a;border-radius:14px;padding:14px;margin:12px 0;background:#0a0a0a}
     .btn{display:inline-block;background:#111;border:1px solid #333;color:#fff;padding:12px 16px;border-radius:12px;margin:6px 8px 6px 0;font-weight:700}
     .btn:active{transform:translateY(1px)}
-    .pill{display:inline-block;border:1px solid #2b2b2b;background:#121212;border-radius:999px;padding:4px 10px;margin:6px 8px 0 0}
     .screen{display:none}
     .screen.active{display:block}
     .nav{position:fixed;left:0;right:0;bottom:0;background:#000;border-top:1px solid #1b1b1b;display:flex;justify-content:space-around;padding:10px 6px calc(10px + env(safe-area-inset-bottom));z-index:20}
     .nav button{background:none;border:none;color:#fff;font-size:22px}
-    .list .it{border-bottom:1px solid #1e1e1e;padding:12px 4px}
-    input[type=text]{width:100%;background:#0e0e0e;color:#fff;border:1px solid #2b2b2b;border-radius:10px;padding:10px}
-    select,textarea{background:#0e0e0e;color:#fff;border:1px solid #2b2b2b;border-radius:10px;padding:10px}
-    textarea{width:100%;min-height:220px}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    @media(max-width:520px){.grid2{grid-template-columns:1fr}}
-    .bar{width:100%;height:6px;background:#2a2a2a;border-radius:5px;position:relative;margin:12px 0}
-    .dot{position:absolute;top:-5px;width:16px;height:16px;background:#0af;border-radius:50%}
-    .sticky-actions{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));z-index:9999;background:rgba(0,0,0,.96);border-top:1px solid #1b1b1b;padding:10px 12px}
-    .sticky-actions .inner{max-width:860px;margin:0 auto}
-    .small{font-size:13px}
+    textarea{width:100%;min-height:180px;background:#0e0e0e;color:#fff;border:1px solid #2b2b2b;border-radius:10px;padding:10px}
   </style>
 </head>
 <body>
@@ -42,318 +31,81 @@
 
 <div class="wrap">
   <section id="home" class="screen active">
-    <h2>CFalls Loader (v4)</h2>
+    <h2>CFalls Loader (v4.1)</h2>
     <div class="card">
-      <div class="muted">This build avoids inline onclick handlers (better compatibility on locked-down devices).</div>
+      <div class="muted">JS status: <b id="jsStatus">(checking…)</b></div>
       <div style="margin-top:10px">
-        <button class="btn" data-nav="import">Import / Paste Data</button>
-        <button class="btn" data-nav="flower">Flower</button>
+        <button class="btn" id="btnImport">Import / Paste Data</button>
+        <button class="btn" id="btnFlower">Flower</button>
       </div>
+      <div class="muted" style="margin-top:8px">If buttons don't respond, JavaScript is not running on this device/network.</div>
     </div>
-    <div class="card"><b>Sales Floor only:</b> Filters to Room = Sales Floor + Category = Flower + Location contains Cuyahoga Falls.</div>
   </section>
 
   <section id="import" class="screen">
-    <button class="btn" data-nav="home">← Home</button>
+    <button class="btn" id="btnHome1">← Home</button>
     <h2>Paste Data</h2>
     <div class="card">
-      <div class="muted">Paste CSV or TSV (tab-delimited) including headers. Then tap <b>Load</b>.</div>
-      <textarea id="paste" placeholder="Paste your table here..."></textarea>
+      <div class="muted">Paste your TSV/CSV (headers + rows). Then tap Load.</div>
+      <textarea id="paste" placeholder="Paste here…"></textarea>
       <div style="margin-top:10px">
-        <button class="btn" id="loadBtn">Load</button>
-        <button class="btn" id="clearBtn">Clear</button>
+        <button class="btn" id="btnLoad">Load</button>
+        <button class="btn" id="btnClear">Clear</button>
       </div>
-      <div class="muted small" style="margin-top:10px" id="loadmsg"></div>
-    </div>
-
-    <div class="sticky-actions" id="sticky">
-      <div class="inner">
-        <div class="row">
-          <div>
-            <button class="btn" id="loadBtn2">Load</button>
-            <button class="btn" id="clearBtn2">Clear</button>
-          </div>
-          <div class="muted small" id="status">Ready</div>
-        </div>
-      </div>
+      <div class="muted" id="msg" style="margin-top:10px"></div>
     </div>
   </section>
 
   <section id="flower" class="screen">
-    <button class="btn" data-nav="home">← Home</button>
-    <h2>Flower (Sales Floor)</h2>
-    <div class="card">
-      <div class="grid2">
-        <div>
-          <div class="muted">Search</div>
-          <input id="q" type="text" placeholder="Type product or brand..." />
-        </div>
-        <div>
-          <div class="muted">Sort</div>
-          <select id="sort">
-            <option value="total">Highest Total Terps</option>
-            <option value="caryo">Highest Caryophyllene</option>
-            <option value="thc">Highest THC</option>
-            <option value="az">A → Z</option>
-          </select>
-        </div>
-      </div>
-      <div class="muted" style="margin-top:10px">Quick terpene filters</div>
-      <div id="chips"></div>
-      <div class="muted" style="margin-top:10px" id="meta"></div>
+    <button class="btn" id="btnHome2">← Home</button>
+    <h2>Flower</h2>
+    <div class="card" id="flowerCard">
+      <div class="muted">(This is a JS smoke test page. Once JS is confirmed working, we'll swap back to the full filter/sort build.)</div>
     </div>
-
-    <div id="list" class="list"></div>
-    <div id="empty" class="card" style="display:none">No data loaded yet. Go to Import / Paste Data.</div>
-  </section>
-
-  <section id="product" class="screen">
-    <button class="btn" data-nav="flower">← Flower</button>
-    <h2 id="p_title">Product</h2>
-    <div class="muted" id="p_sub">Brand · Size</div>
-
-    <div style="margin-top:10px">
-      <span class="pill" id="p_thc">THC —</span>
-      <span class="pill" id="p_tt">Total Terps —</span>
-    </div>
-
-    <div class="card">
-      <div class="row"><b>Expected Experience Spectrum</b><span class="muted">internal cue</span></div>
-      <div class="bar"><div class="dot" id="p_dot" style="left:50%"></div></div>
-    </div>
-
-    <div class="card">
-      <b>Terpene Breakdown</b>
-      <div id="p_tbl" style="margin-top:10px"></div>
-    </div>
-
-    <div class="card">🔔 <b>Reminder:</b> Check the patient’s <i>Dutchie Journal</i> for previous terpene preferences.</div>
   </section>
 </div>
 
 <div class="nav">
-  <button data-nav="home" aria-label="Home">🏠</button>
-  <button data-nav="flower" aria-label="Flower">🌿</button>
-  <button data-nav="import" aria-label="Import">📥</button>
+  <button id="navHome" aria-label="Home">🏠</button>
+  <button id="navFlower" aria-label="Flower">🌿</button>
+  <button id="navImport" aria-label="Import">📥</button>
 </div>
 
 <script>
-(() => {
-  'use strict';
-
-  let ITEMS = [];
-  let TERP_ORDER = [];
-  let activeTerp = null;
-
-  const $ = (id) => document.getElementById(id);
-
+(function(){
+  function $(id){ return document.getElementById(id); }
   function show(id){
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-    const el = $(id);
+    var screens = document.querySelectorAll('.screen');
+    for(var i=0;i<screens.length;i++){ screens[i].classList.remove('active'); }
+    var el = $(id);
     if(el) el.classList.add('active');
-    const sticky = $('sticky');
-    if(sticky) sticky.style.display = (id==='import') ? 'block' : 'none';
-    window.scrollTo({top:0,behavior:'instant'});
-    if(id==='flower') renderList();
+    window.scrollTo(0,0);
   }
 
-  function detectDelimiter(text){
-    const first = (text.split(/?
-/)[0]||'');
-    const tabs = (first.match(/	/g)||[]).length;
-    const commas = (first.match(/,/g)||[]).length;
-    return tabs>=commas ? '	' : ',';
-  }
+  // Mark JS as running
+  var s = $('jsStatus');
+  if(s) s.textContent = 'RUNNING ✅';
 
-  function pct(s){
-    if(s==null) return null;
-    const str = String(s).replace('%','').trim();
-    if(!str) return null;
-    const n = parseFloat(str);
-    return Number.isFinite(n) ? n : null;
-  }
+  // Wire buttons using direct onclick assignments (most compatible)
+  $('btnImport').onclick = function(){ show('import'); };
+  $('btnFlower').onclick = function(){ show('flower'); };
+  $('btnHome1').onclick  = function(){ show('home'); };
+  $('btnHome2').onclick  = function(){ show('home'); };
+  $('navHome').onclick   = function(){ show('home'); };
+  $('navFlower').onclick = function(){ show('flower'); };
+  $('navImport').onclick = function(){ show('import'); };
 
-  function buildChips(){
-    const chipBox = $('chips');
-    chipBox.innerHTML='';
-    const quick = ['BetaCaryphyllene','Limonene','BetaMyrcene','Linalool','AlphaPinene','BetaPinene','Humulene','Terpinolene'];
-    quick.filter(t=>TERP_ORDER.includes(t)).forEach(t=>{
-      const s=document.createElement('span');
-      s.className='pill';
-      s.style.cursor='pointer';
-      s.textContent = t.replace('Beta','β-').replace('Alpha','α-');
-      s.addEventListener('click', ()=>{ activeTerp = (activeTerp===t?null:t); renderList(); });
-      chipBox.appendChild(s);
-    });
-  }
+  $('btnClear').onclick = function(){ $('paste').value=''; $('msg').textContent=''; };
 
-  function parseText(text){
-    text = (text||'').trim();
-    if(!text) return {items:[], terpCols:[]};
-    const delim = detectDelimiter(text);
-    const lines = text.split(/?
-/).filter(l=>l.trim());
-    const headers = lines[0].split(delim).map(s=>s.trim());
-    const rows = lines.slice(1).map(l=>{
-      const parts = l.split(delim);
-      while(parts.length < headers.length) parts.push('');
-      const obj = {};
-      headers.forEach((h,i)=> obj[h] = (parts[i]??'').trim());
-      return obj;
-    });
-
-    const key = (name)=> headers.find(h=>h.toLowerCase()===name.toLowerCase());
-    const kProduct = key('Product') || key('Item') || key('Name');
-    const kLocation = key('Location') || key('Store');
-    const kCategory = key('Category');
-    const kRoom = key('Room');
-    const kTHC = key('THC') || key('THC %');
-    const kTotal = key('TotalTerpenes') || key('Total Terpenes') || key('Total Terps');
-
-    const terpCols = headers.filter(h=>![kProduct,kLocation,kCategory,kRoom,kTHC,kTotal].includes(h));
-    const out=[];
-
-    rows.forEach(r=>{
-      const loc = (r[kLocation]||'');
-      const room = (r[kRoom]||'');
-      const cat = (r[kCategory]||'');
-      if(!loc.toLowerCase().includes('cuyahoga')) return;
-      if(room.toLowerCase().replace(/\s+/g,' ')!=='sales floor') return;
-      if(!cat.toLowerCase().includes('flower')) return;
-
-      const prod = (r[kProduct]||'');
-      const parts = prod.split('|').map(x=>x.trim());
-      const brand = parts[0]||'';
-      const name = parts[1]||prod;
-      const size = parts[2]||'';
-
-      const terps={};
-      terpCols.forEach(tc=>{ terps[tc]=pct(r[tc]); });
-
-      let total = pct(r[kTotal]);
-      if(total==null){ total = Object.values(terps).reduce((a,v)=>a+(v||0),0); }
-
-      out.push({brand,product:name,size,thc:pct(r[kTHC]),totalTerps:total,totalTerpsProvided:(pct(r[kTotal])!=null),terpenes:terps});
-    });
-
-    return {items: out, terpCols};
-  }
-
-  function renderList(){
-    const empty = $('empty');
-    const list = $('list');
-    const meta = $('meta');
-
-    if(!ITEMS.length){
-      empty.style.display='block';
-      list.innerHTML='';
-      meta.textContent='';
-      return;
-    }
-    empty.style.display='none';
-
-    const q = ($('q').value||'').toLowerCase().trim();
-    const sort = $('sort').value;
-    let arr = ITEMS.slice();
-
-    if(q){
-      arr = arr.filter(it => (it.product||'').toLowerCase().includes(q) || (it.brand||'').toLowerCase().includes(q));
-    }
-    if(activeTerp){
-      arr = arr.filter(it => (it.terpenes && (it.terpenes[activeTerp]||0) > 0));
-    }
-
-    if(sort==='total') arr.sort((a,b)=> (b.totalTerps||0)-(a.totalTerps||0));
-    else if(sort==='caryo') arr.sort((a,b)=> ((b.terpenes?.BetaCaryphyllene)||0)-((a.terpenes?.BetaCaryphyllene)||0));
-    else if(sort==='thc') arr.sort((a,b)=> (b.thc||0)-(a.thc||0));
-    else arr.sort((a,b)=> (a.product||'').localeCompare(b.product||''));
-
-    meta.textContent = `Showing ${arr.length} item(s)` + (activeTerp?` · Filter: ${activeTerp}`:'');
-    list.innerHTML='';
-
-    const top3 = (it)=>{
-      const entries = Object.entries(it.terpenes||{}).filter(([k,v])=>v && v>0);
-      entries.sort((a,b)=>b[1]-a[1]);
-      return entries.slice(0,3).map(x=>x[0]);
-    };
-
-    arr.forEach(it=>{
-      const div=document.createElement('div');
-      div.className='it';
-      const t3 = top3(it);
-      div.innerHTML = `
-        <div class="row">
-          <div>
-            <b>${it.product||'Unnamed'}</b>
-            <div class="muted">${it.brand||''}${it.size?` · ${it.size}`:''}</div>
-          </div>
-          <div>
-            <span class="pill">THC ${it.thc!=null?it.thc.toFixed(2):'—'}%</span>
-            <span class="pill">Terps ${it.totalTerps!=null?it.totalTerps.toFixed(2):'—'}%</span>
-          </div>
-        </div>
-        <div style="margin-top:6px">${t3.map(t=>`<span class="pill">${t}</span>`).join('')}</div>
-        <div style="margin-top:10px"><button class="btn">View Details</button></div>
-      `;
-      div.querySelector('button').addEventListener('click', ()=>openProduct(it));
-      list.appendChild(div);
-    });
-  }
-
-  function openProduct(it){
-    $('p_title').textContent = it.product || 'Product';
-    $('p_sub').textContent = `${it.brand||''}${it.size?` · ${it.size}`:''}`;
-    $('p_thc').textContent = `THC ${it.thc!=null?it.thc.toFixed(2):'—'}%`;
-    $('p_tt').textContent = `Total Terps ${it.totalTerps!=null?it.totalTerps.toFixed(2):'—'}%` + (it.totalTerpsProvided?'':' (calc)');
-
-    const tbl = $('p_tbl');
-    tbl.innerHTML='';
-    TERP_ORDER.forEach(t=>{
-      const v = (it.terpenes||{})[t];
-      const row=document.createElement('div');
-      row.className='row';
-      const muted = (v==null);
-      row.innerHTML = `<div class="${muted?'muted':''}">${t}</div><div class="${muted?'muted':''}">${v==null?'—':v.toFixed(2)+'%'}</div>`;
-      tbl.appendChild(row);
-    });
-
-    show('product');
-  }
-
-  function clearPaste(){
-    $('paste').value='';
-    $('loadmsg').textContent='';
-    $('status').textContent='Ready';
-  }
-
-  function loadFromPaste(){
-    $('status').textContent='Loading…';
-    const res = parseText($('paste').value);
-    ITEMS = res.items;
-    TERP_ORDER = res.terpCols.slice();
-    activeTerp = null;
-    buildChips();
-
-    $('loadmsg').textContent = ITEMS.length ? `Loaded ${ITEMS.length} rows.` : 'No matching CFalls Sales Floor Flower rows found.';
-    $('status').textContent = ITEMS.length ? 'Loaded' : 'No matches';
-
-    if(ITEMS.length){ show('flower'); }
-  }
-
-  // Wire up navigation buttons (no inline handlers)
-  document.querySelectorAll('[data-nav]').forEach(btn=>{
-    btn.addEventListener('click', ()=> show(btn.getAttribute('data-nav')));
-  });
-
-  $('q').addEventListener('input', renderList);
-  $('sort').addEventListener('change', renderList);
-  $('loadBtn').addEventListener('click', loadFromPaste);
-  $('loadBtn2').addEventListener('click', loadFromPaste);
-  $('clearBtn').addEventListener('click', clearPaste);
-  $('clearBtn2').addEventListener('click', clearPaste);
-
-  // Start state
-  $('sticky').style.display='none';
+  $('btnLoad').onclick = function(){
+    var t = ($('paste').value||'').trim();
+    if(!t){ $('msg').textContent='Paste data first.'; return; }
+    // Minimal validation: look for header keywords
+    var firstLine = t.split(/?
+/)[0] || '';
+    var ok = /Product/i.test(firstLine) && /Room/i.test(firstLine) && /Category/i.test(firstLine);
+    $('msg').textContent = ok ? 'Pasted data detected ✅ (next step: enable full parser/build)' : 'Pasted data detected, but headers did not match expected columns.';
+  };
 })();
 </script>
 </body>

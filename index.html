@@ -6,48 +6,66 @@
   <title>CFalls Loader – Prototype</title>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 40px;
-      line-height: 1.5;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 25px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px 10px;
-      text-align: left;
-      vertical-align: top;
-    }
-    th {
-      background: #efefef;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.5; }
     .small { color: #555; }
+    .status {
+      display:inline-block; padding:10px 12px; border-radius:8px; margin: 10px 0 18px;
+      font-weight: 700;
+    }
+    .ok { background:#d4edda; color:#155724; }
+    .warn { background:#ffeeba; color:#7a5a00; }
+    .bad { background:#f8d7da; color:#721c24; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #efefef; position: sticky; top: 0; z-index: 1; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
   </style>
 </head>
 
 <body>
   <h1>CFalls Product Terpene Loader (Prototype)</h1>
-  <p class="small">
-    Baked-in JSON list • Sort: <strong>Total Terps</strong> (desc), then <strong>Caryophyllene</strong> (desc)
-  </p>
+  <p class="small">Baked-in JSON list • Sort: <strong>Total Terps</strong> (desc), then <strong>Caryophyllene</strong> (desc)</p>
+
+  <div id="jsStatus" class="status warn">JS status: (checking…)</div>
 
   <table id="tbl">
     <thead>
-      <tr>
-        <th>Product</th>
-        <th class="num">THC%</th>
-        <th class="num">Total Terps</th>
+      <tr id="hdrRow">
+        <!-- headers injected by JS so terp order is 100% controlled -->
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-        <th class="num">Caryophyllene</th>
-        <th class="num">Myrcene</th>
-        <th class="num">Limonene</th>
-        <th class="num">Pinene</th>
-        <th class="num">Linalool</th>
+<script>
+(() => {
+  const statusEl = document.getElementById("jsStatus");
+  const setStatus = (cls, msg) => {
+    statusEl.classList.remove("ok","warn","bad");
+    statusEl.classList.add(cls);
+    statusEl.textContent = msg;
+  };
+
+  try {
+    // -------------------------
+    // SAMPLE DATA (PROTOTYPE)
+    // terp values are in % (0.42 = 0.42%)
+    // -------------------------
+    const data = [
+      { product: "Wedding Cake",     thc: 27.4, cary: 0.89, myr: 0.25, lim: 0.42, pin: 0.08, lin: 0.06, ter: 0.00 },
+      { product: "GMO",              thc: 29.1, cary: 1.12, myr: 0.44, lim: 0.18, pin: 0.04, lin: 0.07, ter: 0.00 },
+      { product: "Blueberry Muffin", thc: 23.8, cary: 0.41, myr: 0.36, lim: 0.55, pin: 0.06, lin: 0.10, ter: 0.02 },
+      { product: "Apples & Bananas", thc: 30.2, cary: 0.72, myr: 0.29, lim: 0.60, pin: 0.07, lin: 0.05, ter: 0.03 }
+    ];
+
+    // ------------------------------------------------------------
+    // ✅ SET YOUR DESKTOP TTTT TERP ORDER HERE (labels + keys)
+    // Replace this list to match your desktop TTTT exactly.
+    // keys must match the data fields above (cary, myr, lim, pin, lin, ter)
+    // ------------------------------------------------------------
+    const terpColumns = [
+      { key: "cary", label: "BetaCaryophyllene" }, // keep this first if that’s your TTTT order
+      { key: "myr",  label: "Myrcene" },
+      { key: "lim",  label: "Limonene" },
+      { key: "pin",  label: "Pinene" },

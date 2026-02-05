@@ -1,112 +1,49 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TTTT Mobile — CFalls Loader (v4.1)</title>
-  <style>
-    :root{color-scheme:dark}
-    html,body{margin:0;background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial}
-    header{position:sticky;top:0;background:#000;border-bottom:1px solid #111;padding:10px 16px;z-index:10}
-    .wrap{max-width:860px;margin:0 auto;padding:16px 16px 120px}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .muted{color:#a7a7a7}
-    .card{border:1px solid #2a2a2a;border-radius:14px;padding:14px;margin:12px 0;background:#0a0a0a}
-    .btn{display:inline-block;background:#111;border:1px solid #333;color:#fff;padding:12px 16px;border-radius:12px;margin:6px 8px 6px 0;font-weight:700}
-    .btn:active{transform:translateY(1px)}
-    .screen{display:none}
-    .screen.active{display:block}
-    .nav{position:fixed;left:0;right:0;bottom:0;background:#000;border-top:1px solid #1b1b1b;display:flex;justify-content:space-around;padding:10px 6px calc(10px + env(safe-area-inset-bottom));z-index:20}
-    .nav button{background:none;border:none;color:#fff;font-size:22px}
-    textarea{width:100%;min-height:180px;background:#0e0e0e;color:#fff;border:1px solid #2b2b2b;border-radius:10px;padding:10px}
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TTTT Loader – Smoke Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            line-height: 1.6;
+        }
+        .status {
+            font-size: 1.4rem;
+            padding: 10px 14px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .checking {
+            background: #ffeeba;
+            color: #7a5a00;
+        }
+        .running {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
 </head>
+
 <body>
-<header>
-  <div class="row">
-    <div><b>TTTT</b> <span class="muted">Mobile — Staff</span></div>
-    <div class="muted">[Store: Cuyahoga Falls]</div>
-  </div>
-</header>
 
-<div class="wrap">
-  <section id="home" class="screen active">
-    <h2>CFalls Loader (v4.1)</h2>
-    <div class="card">
-      <div class="muted">JS status: <b id="jsStatus">(checking…)</b></div>
-      <div style="margin-top:10px">
-        <button class="btn" id="btnImport">Import / Paste Data</button>
-        <button class="btn" id="btnFlower">Flower</button>
-      </div>
-      <div class="muted" style="margin-top:8px">If buttons don't respond, JavaScript is not running on this device/network.</div>
-    </div>
-  </section>
+    <h1>Smoke Test: JS Execution</h1>
+    <p>This page only tests whether JavaScript is loading and running on GitHub Pages.</p>
 
-  <section id="import" class="screen">
-    <button class="btn" id="btnHome1">← Home</button>
-    <h2>Paste Data</h2>
-    <div class="card">
-      <div class="muted">Paste your TSV/CSV (headers + rows). Then tap Load.</div>
-      <textarea id="paste" placeholder="Paste here…"></textarea>
-      <div style="margin-top:10px">
-        <button class="btn" id="btnLoad">Load</button>
-        <button class="btn" id="btnClear">Clear</button>
-      </div>
-      <div class="muted" id="msg" style="margin-top:10px"></div>
-    </div>
-  </section>
+    <div id="jsStatus" class="status checking">JS status: (checking…)</div>
 
-  <section id="flower" class="screen">
-    <button class="btn" id="btnHome2">← Home</button>
-    <h2>Flower</h2>
-    <div class="card" id="flowerCard">
-      <div class="muted">(This is a JS smoke test page. Once JS is confirmed working, we'll swap back to the full filter/sort build.)</div>
-    </div>
-  </section>
-</div>
+    <script>
+        // If this script runs, the status text updates immediately.
+        document.addEventListener("DOMContentLoaded", () => {
+            const el = document.getElementById("jsStatus");
+            el.textContent = "JS status: RUNNING ✅";
+            el.classList.remove("checking");
+            el.classList.add("running");
+        });
+    </script>
 
-<div class="nav">
-  <button id="navHome" aria-label="Home">🏠</button>
-  <button id="navFlower" aria-label="Flower">🌿</button>
-  <button id="navImport" aria-label="Import">📥</button>
-</div>
-
-<script>
-(function(){
-  function $(id){ return document.getElementById(id); }
-  function show(id){
-    var screens = document.querySelectorAll('.screen');
-    for(var i=0;i<screens.length;i++){ screens[i].classList.remove('active'); }
-    var el = $(id);
-    if(el) el.classList.add('active');
-    window.scrollTo(0,0);
-  }
-
-  // Mark JS as running
-  var s = $('jsStatus');
-  if(s) s.textContent = 'RUNNING ✅';
-
-  // Wire buttons using direct onclick assignments (most compatible)
-  $('btnImport').onclick = function(){ show('import'); };
-  $('btnFlower').onclick = function(){ show('flower'); };
-  $('btnHome1').onclick  = function(){ show('home'); };
-  $('btnHome2').onclick  = function(){ show('home'); };
-  $('navHome').onclick   = function(){ show('home'); };
-  $('navFlower').onclick = function(){ show('flower'); };
-  $('navImport').onclick = function(){ show('import'); };
-
-  $('btnClear').onclick = function(){ $('paste').value=''; $('msg').textContent=''; };
-
-  $('btnLoad').onclick = function(){
-    var t = ($('paste').value||'').trim();
-    if(!t){ $('msg').textContent='Paste data first.'; return; }
-    // Minimal validation: look for header keywords
-    var firstLine = t.split(/?
-/)[0] || '';
-    var ok = /Product/i.test(firstLine) && /Room/i.test(firstLine) && /Category/i.test(firstLine);
-    $('msg').textContent = ok ? 'Pasted data detected ✅ (next step: enable full parser/build)' : 'Pasted data detected, but headers did not match expected columns.';
-  };
-})();
-</script>
 </body>
 </html>

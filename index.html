@@ -72,78 +72,108 @@ document.addEventListener("DOMContentLoaded", function () {
   setStatus("running", "JS status: RUNNING ✅ (initializing…)");
 
   try {
-    // ------------------------------------------------------------
-    // 1) Canonical non-terp columns (TTTT order)
-    // ------------------------------------------------------------
-    var baseCols = [
-      { key: "Product", label: "Product", type: "txt" },
-      { key: "Location", label: "Location", type: "txt" },
-      { key: "Product Type", label: "Product Type", type: "txt" },
-      { key: "Room", label: "Room", type: "txt" },
-      { key: "THC", label: "THC", type: "num_pct" },
-      { key: "Total Terpenes", label: "Total Terpenes", type: "num_pct" }
-    ];
+  // ------------------------------------------------------------
+// 3) CFalls TSV pasted as a STRING, then parsed into `data`
+// ------------------------------------------------------------
 
-    // ------------------------------------------------------------
-    // 2) Canonical terp columns (exact order from desktop TTTT)
-    // ------------------------------------------------------------
-    var terpCols = [
-      "BetaCaryphyllene",
-      "Limonene",
-      "Linalool",
-      "BetaMyrcene",
-      "Humulene",
-      "Terpinolene",
-      "BetaPinene",
-      "AlphaPinene",
-      "ThreeCarene",
-      "AlphaTerpinene",
-      "BetaEudesmol",
-      "Bisabolol",
-      "Camphene",
-      "Eucalyptol",
-      "Geraniol",
-      "Guaiol",
-      "Isopulegol",
-      "Nerolidol",
-      "NerolidolTwo",
-      "Ocimene",
-      "OcimeneOne",
-      "OcimeneTwo",
-      "pCymene",
-      "pIsopropyltouluene",
-      "Terpinene",
-      "TransNerolidol"
-    ];
-
-    // Show blanks instead of 0.00% (matches export look)
-    var BLANK_ZERO = true;
-
-    function toNum(x) {
-      var n = Number(x);
-      return isFinite(n) ? n : 0;
-    }
-
-    function fmtPct(n) {
-      var num = toNum(n);
-      if (BLANK_ZERO && num === 0) return "";
-      return num.toFixed(2) + "%"; // ✅ no space
-    }
-
-    // ------------------------------------------------------------
-    // 3) Sample data (baked-in)
-    // NOTE: Missing terp keys will be treated as 0.
-    // Product Type values here are what the dropdown will use.
-    // ------------------------------------------------------------
-   // --------------
-// PASTE CFALLS TSV HERE (header row + rows)
-// --------------
+// PASTE YOUR TSV HERE (keep header row + product rows)
 var RAW_TSV = String.raw`Product    Location    Category    Room    THC    TotalTerpenes    BetaCaryphyllene    Limonene    Linalool    BetaMyrcene    Humulene    Terpinolene    BetaPinene    AlphaPinene    ThreeCarene    AlphaTerpinene    BetaEudesmol    Bisabolol    Camphene    Eucalyptol    Geraniol    Guaiol    Isopulegol    Nerolidol    NerolidolTwo    Ocimene    OcimeneOne    OcimeneTwo    pCymene    pIsopropyltouluene    Terpinene    TransNerolidol    Batch    Cannabinoid    CaryophylleneOxide
 Rebel | Double OG CHM | 1g Live Resin Budder    Farmaceuticalrx (Cuyahoga Falls)    Budder    Sales Floor    666.0 mg/g        8.48 mg/g    30.5 mg/g    13.4 mg/g    28.7 mg/g    3.5 mg/g        4.11 mg/g    2.01 mg/g        0.02 mg/g        2.3 mg/g        0.0 mg/g                                                    1A407030000332D000023614        0.26 mg/g
 Meigs County | LA Kush Cake | 14.15g Country Cut    Farmaceuticalrx (Cuyahoga Falls)    Flower    Sales Floor    22.9 %        0.67 %    0.73 %    0.24 %    0.6 %    0.2 %        0.12 %    0.06 %        0.0 %        0.06 %                                                            1A40703000000C9000006828        0.01 %
-Pure Ohio Wellness | Gelato | 2.83g    Farmaceuticalrx (Cuyahoga Falls)    Flower    Sales Floor    26.3 %        0.91 %    0.91 %    0.48 %        0.35 %                                                                                        1A4070300002C25000019210        
-... paste the rest of your rows ...
+Pure Ohio Wellness | Gelato | 2.83g    Farmaceuticalrx (Cuyahoga Falls)    Flower    Sales Floor    26.3 %        0.91 %    0.91 %    0.48 %        0.35 %                                                                                        1A4070300002C25000019210
 `;
+
+// --- helpers to parse TSV that may come in as tabs OR multiple spaces ---
+function splitFields(line) {
+  // If it contains tabs, split on tabs (best for Excel copy/paste)
+  if (line.indexOf("\t") >= 0) return line.split("\t");
+  // Fallback: split on 2+ spaces (some paste formats collapse tabs)
+  return line.trim().split(/ {2,}/);
+}
+
+function parseTsvToRows(tsv) {
+  var lines = tsv.split(/\r?\n/).filter(function (l) { return l.trim().length > 0; });
+  if (lines.length < 2) return [];
+
+  var header = splitFields(lines[0]).map(function (h) { return h.trim(); });
+  var rows = [];
+
+  for (var i = 1; i < lines.length; i++) {
+    var parts = splitFields(lines[i]);
+    var obj = {};
+    for (var j = 0; j < header.length; j++) {
+      obj[header[j]] = (parts[j] || "").trim();
+    }
+    rows.push(obj);
+  }
+  return rows;
+}
+
+// Converts "22.9 %", "666.0 mg/g", "" into numeric percent (22.9, 66.6, 0)
+function normalizePercent(val) {
+  if (val == null) return 0;
+  var s = String(val).trim();
+  if (!s) return 0;
+  s = s.replace(/,/g, "");
+
+  if (/mg\/g/i.test(s)) {
+    var n1 = parseFloat(s);
+    return isFinite(n1) ? (n1 / 10) : 0; // mg/g ÷ 10 = %
+  }
+  if (/%/.test(s)) {
+    var n2 = parseFloat(s);
+    return isFinite(n2) ? n2 : 0;
+  }
+  var n3 = parseFloat(s);
+  return isFinite(n3) ? n3 : 0;
+}
+
+// Map your granular Category values into the UI buckets you want
+function mapToUiCategory(rawCat) {
+  var c = String(rawCat || "").toLowerCase();
+
+  if (c === "flower") return "Flower";
+
+  // Vape bucket
+  if (c.includes("vape") || c.includes("cartridge") || c.includes("cartridges") || c.includes("disposable")) {
+    return "Vape";
+  }
+
+  // Concentrate bucket
+  if (c.includes("budder") || c.includes("badder") || c.includes("sugar") || c.includes("sauce") ||
+      c.includes("resin") || c.includes("rosin") || c.includes("wax") || c.includes("shatter")) {
+    return "Concentrate";
+  }
+
+  // Ignore everything else for now (edible/tincture/etc.)
+  return "";
+}
+
+// Build `data` from TSV (this is what your existing code expects)
+var parsed = parseTsvToRows(RAW_TSV);
+
+var data = parsed.map(function (r) {
+  var uiCat = mapToUiCategory(r.Category);
+
+  if (!uiCat) return null; // drop categories we aren't showing yet
+
+  var row = {
+    "Product": r.Product || "",
+    "Location": r.Location || "",
+    "Product Type": uiCat,    // internal field used by the dropdown
+    "Room": r.Room || "",
+    "THC": normalizePercent(r.THC),
+    "Total Terpenes": 0
+  };
+
+  // normalize terp values into numeric percents
+  for (var t = 0; t < terpCols.length; t++) {
+    var k = terpCols[t];
+    row[k] = normalizePercent(r[k]);
+  }
+
+  return row;
+}).filter(Boolean);
 
     // ------------------------------------------------------------
     // 4) Compute Total Terpenes (addition step across canonical keys)

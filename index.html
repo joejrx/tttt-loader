@@ -3,40 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CFalls Loader – Prototype</title>
+  <title>TTTT Prototype – Canonical Order</title>
 
   <style>
-    body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.5; }
-    .small { color: #555; }
-    .status {
+    body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.45; }
+    .small { color:#555; }
+    .status{
       display:inline-block; padding:10px 12px; border-radius:8px; margin: 10px 0 18px;
-      font-weight: 700;
+      font-weight: 800;
     }
     .ok { background:#d4edda; color:#155724; }
     .warn { background:#ffeeba; color:#7a5a00; }
     .bad { background:#f8d7da; color:#721c24; }
 
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; vertical-align: top; }
-    th { background: #efefef; position: sticky; top: 0; z-index: 1; }
-    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .wrap { overflow-x:auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+    th, td { border: 1px solid #ccc; padding: 8px 10px; vertical-align: top; }
+    th { background:#efefef; position: sticky; top: 0; z-index: 2; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    td.txt, th.txt { text-align: left; }
   </style>
 </head>
 
 <body>
-  <h1>CFalls Product Terpene Loader (Prototype)</h1>
-  <p class="small">Baked-in JSON list • Sort: <strong>Total Terps</strong> (desc), then <strong>Caryophyllene</strong> (desc)</p>
+  <h1>TTTT Prototype (Canonical TTTT Order)</h1>
+  <p class="small">
+    Baked-in sample rows • Sort: <b>Total Terpenes</b> (desc), then <b>BetaCaryphyllene</b> (desc)
+  </p>
 
   <div id="jsStatus" class="status warn">JS status: (checking…)</div>
 
-  <table id="tbl">
-    <thead>
-      <tr id="hdrRow">
-        <!-- headers injected by JS so terp order is 100% controlled -->
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div class="wrap">
+    <table id="tbl">
+      <thead>
+        <tr id="hdrRow"></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
 <script>
 (() => {
@@ -48,24 +52,161 @@
   };
 
   try {
-    // -------------------------
-    // SAMPLE DATA (PROTOTYPE)
-    // terp values are in % (0.42 = 0.42%)
-    // -------------------------
-    const data = [
-      { product: "Wedding Cake",     thc: 27.4, cary: 0.89, myr: 0.25, lim: 0.42, pin: 0.08, lin: 0.06, ter: 0.00 },
-      { product: "GMO",              thc: 29.1, cary: 1.12, myr: 0.44, lim: 0.18, pin: 0.04, lin: 0.07, ter: 0.00 },
-      { product: "Blueberry Muffin", thc: 23.8, cary: 0.41, myr: 0.36, lim: 0.55, pin: 0.06, lin: 0.10, ter: 0.02 },
-      { product: "Apples & Bananas", thc: 30.2, cary: 0.72, myr: 0.29, lim: 0.60, pin: 0.07, lin: 0.05, ter: 0.03 }
+    // -----------------------------------------
+    // ✅ Canonical terp order from desktop TTTT
+    // (exact order as you pasted)
+    // -----------------------------------------
+    const terpColumns = [
+      { key: "BetaCaryphyllene", label: "BetaCaryphyllene" },
+      { key: "Limonene", label: "Limonene" },
+      { key: "Linalool", label: "Linalool" },
+      { key: "BetaMyrcene", label: "BetaMyrcene" },
+      { key: "Humulene", label: "Humulene" },
+      { key: "Terpinolene", label: "Terpinolene" },
+      { key: "BetaPinene", label: "BetaPinene" },
+      { key: "AlphaPinene", label: "AlphaPinene" },
+      { key: "ThreeCarene", label: "ThreeCarene" },
+      { key: "AlphaTerpinene", label: "AlphaTerpinene" },
+      { key: "BetaEudesmol", label: "BetaEudesmol" },
+      { key: "Bisabolol", label: "Bisabolol" },
+      { key: "Camphene", label: "Camphene" },
+      { key: "Eucalyptol", label: "Eucalyptol" },
+      { key: "Geraniol", label: "Geraniol" },
+      { key: "Guaiol", label: "Guaiol" },
+      { key: "Isopulegol", label: "Isopulegol" },
+      { key: "Nerolidol", label: "Nerolidol" },
+      { key: "NerolidolTwo", label: "NerolidolTwo" },
+      { key: "Ocimene", label: "Ocimene" },
+      { key: "OcimeneOne", label: "OcimeneOne" },
+      { key: "OcimeneTwo", label: "OcimeneTwo" },
+      { key: "pCymene", label: "pCymene" },
+      { key: "pIsopropyltouluene", label: "pIsopropyltouluene" },
+      { key: "Terpinene", label: "Terpinene" },
+      { key: "TransNerolidol", label: "TransNerolidol" }
     ];
 
-    // ------------------------------------------------------------
-    // ✅ SET YOUR DESKTOP TTTT TERP ORDER HERE (labels + keys)
-    // Replace this list to match your desktop TTTT exactly.
-    // keys must match the data fields above (cary, myr, lim, pin, lin, ter)
-    // ------------------------------------------------------------
-    const terpColumns = [
-      { key: "cary", label: "BetaCaryophyllene" }, // keep this first if that’s your TTTT order
-      { key: "myr",  label: "Myrcene" },
-      { key: "lim",  label: "Limonene" },
-      { key: "pin",  label: "Pinene" },
+    const terpKeys = terpColumns.map(t => t.key);
+
+    // -----------------------------------------
+    // Sample data (baked-in)
+    // Use terp keys above; missing values become 0
+    // -----------------------------------------
+    const data = [
+      {
+        Product: "Anthos | Walkabout | 14.15g Premium Flower",
+        Location: "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product Type": "Flower",
+        Room: "Sales Floor",
+        THC: 25.10,
+        BetaCaryphyllene: 0.92,
+        Limonene: 0.64,
+        Linalool: 0.08,
+        BetaMyrcene: 1.07,
+        Humulene: 0.36,
+        BetaPinene: 0.09,
+        AlphaPinene: 0.05,
+        Guaiol: 0.16,
+        Isopulegol: 0.02
+      },
+      {
+        Product: "Anthos | Walkabout | 1g Live Resin Badder",
+        Location: "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product Type": "Concentrate",
+        Room: "Sales Floor",
+        THC: 63.00,
+        BetaCaryphyllene: 2.25,
+        Limonene: 2.98,
+        BetaMyrcene: 1.81,
+        Humulene: 0.90,
+        Guaiol: 0.41
+      },
+      {
+        Product: "88 Lift | O.V. 2.0 | .84g Rechargable Disposable Vape",
+        Location: "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product Type": "Vape",
+        Room: "Sales Floor",
+        THC: 73.90,
+        BetaCaryphyllene: 1.05,
+        Limonene: 1.51,
+        Linalool: 0.41,
+        BetaMyrcene: 0.99,
+        Humulene: 0.03,
+        BetaPinene: 0.28,
+        AlphaPinene: 0.16,
+        BetaEudesmol: 0.23
+      },
+      {
+        Product: "Anthos | Neon Flamingo | 1g Live Resin Sauce",
+        Location: "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product Type": "Concentrate",
+        Room: "Sales Floor",
+        THC: 66.20,
+        BetaCaryphyllene: 1.43,
+        Limonene: 2.84,
+        Linalool: 1.48,
+        BetaMyrcene: 0.75,
+        Humulene: 0.44
+      }
+    ];
+
+    // -----------------------------------------
+    // Total Terpenes = sum across canonical terp keys
+    // (this is the same "addition step" logic)
+    // -----------------------------------------
+    data.forEach(row => {
+      terpKeys.forEach(k => row[k] = Number(row[k] ?? 0) || 0);
+      const total = terpKeys.reduce((sum, k) => sum + row[k], 0);
+      row["Total Terpenes"] = Number(total.toFixed(2));
+    });
+
+    // Sort by Total Terpenes DESC, then BetaCaryphyllene DESC
+    data.sort((a, b) => {
+      if (b["Total Terpenes"] !== a["Total Terpenes"]) return b["Total Terpenes"] - a["Total Terpenes"];
+      return (b.BetaCaryphyllene || 0) - (a.BetaCaryphyllene || 0);
+    });
+
+    // Build header row in the exact TTTT order:
+    // Product, Location, Product Type, Room, THC, Total Terpenes, then terps
+    const hdrRow = document.getElementById("hdrRow");
+    hdrRow.innerHTML = `
+      <th class="txt">Product</th>
+      <th class="txt">Location</th>
+      <th class="txt">Product Type</th>
+      <th class="txt">Room</th>
+      <th class="num">THC</th>
+      <th class="num">Total Terpenes</th>
+      ${terpColumns.map(t => `<th class="num">${t.label}</th>`).join("")}
+    `;
+
+    // Render rows
+    const tbody = document.querySelector("#tbl tbody");
+    tbody.innerHTML = "";
+
+    const fmtPct = (n) => (Number(n).toFixed(2) + " %");
+    const fmtNum = (n) => Number(n).toFixed(2);
+
+    data.forEach(row => {
+      const terpCells = terpColumns.map(t => `<td class="num">${fmtPct(row[t.key])}</td>`).join("");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="txt">${row.Product ?? ""}</td>
+        <td class="txt">${row.Location ?? ""}</td>
+        <td class="txt">${row["Product Type"] ?? ""}</td>
+        <td class="txt">${row.Room ?? ""}</td>
+        <td class="num">${fmtPct(row.THC ?? 0)}</td>
+        <td class="num"><b>${fmtPct(row["Total Terpenes"] ?? 0)}</b></td>
+        ${terpCells}
+      `;
+      tbody.appendChild(tr);
+    });
+
+    setStatus("ok", `JS status: RUNNING ✅ (rows: ${data.length})`);
+  } catch (err) {
+    console.error(err);
+    setStatus("bad", `JS ERROR: ${err.message}`);
+  }
+})();
+</script>
+
+</body>
+</html>

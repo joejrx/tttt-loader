@@ -3,209 +3,251 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TTTT Prototype – Canonical Order</title>
+  <title>TTTT Loader – Prototype (Full Table)</title>
 
   <style>
     body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.45; }
-    .small { color:#555; }
-    .status{
+    .small { color:#555; margin-top: 4px; }
+    .status {
       display:inline-block; padding:10px 12px; border-radius:8px; margin: 10px 0 18px;
       font-weight: 800;
     }
-    .ok { background:#d4edda; color:#155724; }
-    .warn { background:#ffeeba; color:#7a5a00; }
-    .bad { background:#f8d7da; color:#721c24; }
+    .checking { background:#ffeeba; color:#7a5a00; }
+    .running { background:#d4edda; color:#155724; }
+    .error { background:#f8d7da; color:#721c24; }
 
     .wrap { overflow-x:auto; -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+    table { width: 100%; border-collapse: collapse; min-width: 1600px; }
     th, td { border: 1px solid #ccc; padding: 8px 10px; vertical-align: top; }
     th { background:#efefef; position: sticky; top: 0; z-index: 2; }
-    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    td.txt, th.txt { text-align: left; }
+    th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    th.txt, td.txt { text-align: left; }
   </style>
 </head>
 
 <body>
-  <h1>TTTT Prototype (Canonical TTTT Order)</h1>
-  <p class="small">
-    Baked-in sample rows • Sort: <b>Total Terpenes</b> (desc), then <b>BetaCaryphyllene</b> (desc)
-  </p>
+  <h1>CFalls Product Terpene Loader (Prototype)</h1>
+  <div class="small">TTTT-style layout • Sort: Total Terpenes (desc), then BetaCaryphyllene (desc)</div>
 
-  <div id="jsStatus" class="status warn">JS status: (checking…)</div>
+  <div id="jsStatus" class="status checking">JS status: (checking…)</div>
 
   <div class="wrap">
     <table id="tbl">
-      <thead>
-        <tr id="hdrRow"></tr>
-      </thead>
+      <thead><tr id="hdrRow"></tr></thead>
       <tbody></tbody>
     </table>
   </div>
 
 <script>
-(() => {
-  const statusEl = document.getElementById("jsStatus");
-  const setStatus = (cls, msg) => {
-    statusEl.classList.remove("ok","warn","bad");
-    statusEl.classList.add(cls);
+document.addEventListener("DOMContentLoaded", function () {
+  var statusEl = document.getElementById("jsStatus");
+
+  function setStatus(cls, msg) {
+    statusEl.className = "status " + cls;
     statusEl.textContent = msg;
-  };
+  }
+
+  // ✅ First thing: prove JS ran
+  setStatus("running", "JS status: RUNNING ✅ (building table…)");
 
   try {
-    // -----------------------------------------
-    // ✅ Canonical terp order from desktop TTTT
-    // (exact order as you pasted)
-    // -----------------------------------------
-    const terpColumns = [
-      { key: "BetaCaryphyllene", label: "BetaCaryphyllene" },
-      { key: "Limonene", label: "Limonene" },
-      { key: "Linalool", label: "Linalool" },
-      { key: "BetaMyrcene", label: "BetaMyrcene" },
-      { key: "Humulene", label: "Humulene" },
-      { key: "Terpinolene", label: "Terpinolene" },
-      { key: "BetaPinene", label: "BetaPinene" },
-      { key: "AlphaPinene", label: "AlphaPinene" },
-      { key: "ThreeCarene", label: "ThreeCarene" },
-      { key: "AlphaTerpinene", label: "AlphaTerpinene" },
-      { key: "BetaEudesmol", label: "BetaEudesmol" },
-      { key: "Bisabolol", label: "Bisabolol" },
-      { key: "Camphene", label: "Camphene" },
-      { key: "Eucalyptol", label: "Eucalyptol" },
-      { key: "Geraniol", label: "Geraniol" },
-      { key: "Guaiol", label: "Guaiol" },
-      { key: "Isopulegol", label: "Isopulegol" },
-      { key: "Nerolidol", label: "Nerolidol" },
-      { key: "NerolidolTwo", label: "NerolidolTwo" },
-      { key: "Ocimene", label: "Ocimene" },
-      { key: "OcimeneOne", label: "OcimeneOne" },
-      { key: "OcimeneTwo", label: "OcimeneTwo" },
-      { key: "pCymene", label: "pCymene" },
-      { key: "pIsopropyltouluene", label: "pIsopropyltouluene" },
-      { key: "Terpinene", label: "Terpinene" },
-      { key: "TransNerolidol", label: "TransNerolidol" }
+    // ------------------------------------------------------------
+    // 1) Canonical non-terp columns (TTTT order)
+    // ------------------------------------------------------------
+    var baseCols = [
+      { key: "Product", label: "Product", type: "txt" },
+      { key: "Location", label: "Location", type: "txt" },
+      { key: "Product Type", label: "Product Type", type: "txt" },
+      { key: "Room", label: "Room", type: "txt" },
+      { key: "THC", label: "THC", type: "num_pct" },
+      { key: "Total Terpenes", label: "Total Terpenes", type: "num_pct" }
     ];
 
-    const terpKeys = terpColumns.map(t => t.key);
+    // ------------------------------------------------------------
+    // 2) Canonical terp columns (exact order from your desktop TTTT)
+    // ------------------------------------------------------------
+    var terpCols = [
+      "BetaCaryphyllene",
+      "Limonene",
+      "Linalool",
+      "BetaMyrcene",
+      "Humulene",
+      "Terpinolene",
+      "BetaPinene",
+      "AlphaPinene",
+      "ThreeCarene",
+      "AlphaTerpinene",
+      "BetaEudesmol",
+      "Bisabolol",
+      "Camphene",
+      "Eucalyptol",
+      "Geraniol",
+      "Guaiol",
+      "Isopulegol",
+      "Nerolidol",
+      "NerolidolTwo",
+      "Ocimene",
+      "OcimeneOne",
+      "OcimeneTwo",
+      "pCymene",
+      "pIsopropyltouluene",
+      "Terpinene",
+      "TransNerolidol"
+    ];
 
-    // -----------------------------------------
-    // Sample data (baked-in)
-    // Use terp keys above; missing values become 0
-    // -----------------------------------------
-    const data = [
+    // Show blanks instead of 0.00% (matches how your export looks)
+    var BLANK_ZERO = true;
+
+    // ------------------------------------------------------------
+    // 3) Sample data (baked-in)
+    // NOTE: Missing terp keys will be treated as 0.
+    // ------------------------------------------------------------
+    var data = [
       {
-        Product: "Anthos | Walkabout | 14.15g Premium Flower",
-        Location: "Farmaceuticalrx (Cuyahoga Falls)",
-        "Product Type": "Flower",
-        Room: "Sales Floor",
-        THC: 25.10,
-        BetaCaryphyllene: 0.92,
-        Limonene: 0.64,
-        Linalool: 0.08,
-        BetaMyrcene: 1.07,
-        Humulene: 0.36,
-        BetaPinene: 0.09,
-        AlphaPinene: 0.05,
-        Guaiol: 0.16,
-        Isopulegol: 0.02
-      },
-      {
-        Product: "Anthos | Walkabout | 1g Live Resin Badder",
-        Location: "Farmaceuticalrx (Cuyahoga Falls)",
-        "Product Type": "Concentrate",
-        Room: "Sales Floor",
-        THC: 63.00,
-        BetaCaryphyllene: 2.25,
-        Limonene: 2.98,
-        BetaMyrcene: 1.81,
-        Humulene: 0.90,
-        Guaiol: 0.41
-      },
-      {
-        Product: "88 Lift | O.V. 2.0 | .84g Rechargable Disposable Vape",
-        Location: "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product": "88 Lift | O.V. 2.0 | .84g Rechargable Disposable Vape",
+        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
         "Product Type": "Vape",
-        Room: "Sales Floor",
-        THC: 73.90,
-        BetaCaryphyllene: 1.05,
-        Limonene: 1.51,
-        Linalool: 0.41,
-        BetaMyrcene: 0.99,
-        Humulene: 0.03,
-        BetaPinene: 0.28,
-        AlphaPinene: 0.16,
-        BetaEudesmol: 0.23
+        "Room": "Sales Floor",
+        "THC": 73.90,
+        "BetaCaryphyllene": 1.05,
+        "Limonene": 1.51,
+        "Linalool": 0.41,
+        "BetaMyrcene": 0.99,
+        "Humulene": 0.03,
+        "BetaPinene": 0.28,
+        "AlphaPinene": 0.16,
+        "BetaEudesmol": 0.23
       },
       {
-        Product: "Anthos | Neon Flamingo | 1g Live Resin Sauce",
-        Location: "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product": "Anthos | Neon Flamingo | 1g Live Resin Sauce",
+        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
         "Product Type": "Concentrate",
-        Room: "Sales Floor",
-        THC: 66.20,
-        BetaCaryphyllene: 1.43,
-        Limonene: 2.84,
-        Linalool: 1.48,
-        BetaMyrcene: 0.75,
-        Humulene: 0.44
+        "Room": "Sales Floor",
+        "THC": 66.20,
+        "BetaCaryphyllene": 1.43,
+        "Limonene": 2.84,
+        "Linalool": 1.48,
+        "BetaMyrcene": 0.75,
+        "Humulene": 0.44
+      },
+      {
+        "Product": "Anthos | Walkabout | 14.15g Premium Flower",
+        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product Type": "Flower",
+        "Room": "Sales Floor",
+        "THC": 25.10,
+        "BetaCaryphyllene": 0.92,
+        "Limonene": 0.64,
+        "Linalool": 0.08,
+        "BetaMyrcene": 1.07,
+        "Humulene": 0.36,
+        "BetaPinene": 0.09,
+        "AlphaPinene": 0.05,
+        "Guaiol": 0.16,
+        "Isopulegol": 0.02
+      },
+      {
+        "Product": "Anthos | Walkabout | 1g Live Resin Badder",
+        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product Type": "Concentrate",
+        "Room": "Sales Floor",
+        "THC": 63.00,
+        "BetaCaryphyllene": 2.25,
+        "Limonene": 2.98,
+        "BetaMyrcene": 1.81,
+        "Humulene": 0.90,
+        "Guaiol": 0.41
       }
     ];
 
-    // -----------------------------------------
-    // Total Terpenes = sum across canonical terp keys
-    // (this is the same "addition step" logic)
-    // -----------------------------------------
-    data.forEach(row => {
-      terpKeys.forEach(k => row[k] = Number(row[k] ?? 0) || 0);
-      const total = terpKeys.reduce((sum, k) => sum + row[k], 0);
-      row["Total Terpenes"] = Number(total.toFixed(2));
-    });
+    // ------------------------------------------------------------
+    // 4) Compute Total Terpenes using the "addition step" logic:
+    // Total Terpenes = sum(all terp columns), blanks treated as 0
+    // ------------------------------------------------------------
+    function toNum(x) {
+      var n = Number(x);
+      return isFinite(n) ? n : 0;
+    }
+
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i];
+      var total = 0;
+      for (var t = 0; t < terpCols.length; t++) {
+        var k = terpCols[t];
+        row[k] = toNum(row[k]);        // normalize missing to 0
+        total += row[k];
+      }
+      row["Total Terpenes"] = Math.round(total * 100) / 100; // 2 decimals
+    }
 
     // Sort by Total Terpenes DESC, then BetaCaryphyllene DESC
-    data.sort((a, b) => {
+    data.sort(function(a, b) {
       if (b["Total Terpenes"] !== a["Total Terpenes"]) return b["Total Terpenes"] - a["Total Terpenes"];
-      return (b.BetaCaryphyllene || 0) - (a.BetaCaryphyllene || 0);
+      return toNum(b["BetaCaryphyllene"]) - toNum(a["BetaCaryphyllene"]);
     });
 
-    // Build header row in the exact TTTT order:
-    // Product, Location, Product Type, Room, THC, Total Terpenes, then terps
-    const hdrRow = document.getElementById("hdrRow");
-    hdrRow.innerHTML = `
-      <th class="txt">Product</th>
-      <th class="txt">Location</th>
-      <th class="txt">Product Type</th>
-      <th class="txt">Room</th>
-      <th class="num">THC</th>
-      <th class="num">Total Terpenes</th>
-      ${terpColumns.map(t => `<th class="num">${t.label}</th>`).join("")}
-    `;
+    // ------------------------------------------------------------
+    // 5) Build header row (TTTT order)
+    // ------------------------------------------------------------
+    var hdr = document.getElementById("hdrRow");
+    var hdrHtml = "";
 
-    // Render rows
-    const tbody = document.querySelector("#tbl tbody");
+    for (var c = 0; c < baseCols.length; c++) {
+      hdrHtml += '<th class="' + (baseCols[c].type.indexOf("num") === 0 ? "num" : "txt") + '">' + baseCols[c].label + '</th>';
+    }
+    for (var tc = 0; tc < terpCols.length; tc++) {
+      hdrHtml += '<th class="num">' + terpCols[tc] + '</th>';
+    }
+    hdr.innerHTML = hdrHtml;
+
+    // ------------------------------------------------------------
+    // 6) Render rows
+    // ------------------------------------------------------------
+    var tbody = document.querySelector("#tbl tbody");
     tbody.innerHTML = "";
 
-    const fmtPct = (n) => (Number(n).toFixed(2) + " %");
-    const fmtNum = (n) => Number(n).toFixed(2);
+    function fmtPct(n) {
+      var num = toNum(n);
+      if (BLANK_ZERO && num === 0) return "";
+      return num.toFixed(2) + " %";
+    }
 
-    data.forEach(row => {
-      const terpCells = terpColumns.map(t => `<td class="num">${fmtPct(row[t.key])}</td>`).join("");
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td class="txt">${row.Product ?? ""}</td>
-        <td class="txt">${row.Location ?? ""}</td>
-        <td class="txt">${row["Product Type"] ?? ""}</td>
-        <td class="txt">${row.Room ?? ""}</td>
-        <td class="num">${fmtPct(row.THC ?? 0)}</td>
-        <td class="num"><b>${fmtPct(row["Total Terpenes"] ?? 0)}</b></td>
-        ${terpCells}
-      `;
+    for (var r = 0; r < data.length; r++) {
+      var row2 = data[r];
+      var tr = document.createElement("tr");
+
+      // base columns
+      for (var bc = 0; bc < baseCols.length; bc++) {
+        var col = baseCols[bc];
+        var td = document.createElement("td");
+
+        if (col.type === "txt") {
+          td.className = "txt";
+          td.textContent = row2[col.key] || "";
+        } else if (col.type === "num_pct") {
+          td.className = "num";
+          td.textContent = fmtPct(row2[col.key]);
+        }
+        tr.appendChild(td);
+      }
+
+      // terp columns
+      for (var tt = 0; tt < terpCols.length; tt++) {
+        var td2 = document.createElement("td");
+        td2.className = "num";
+        td2.textContent = fmtPct(row2[terpCols[tt]]);
+        tr.appendChild(td2);
+      }
+
       tbody.appendChild(tr);
-    });
+    }
 
-    setStatus("ok", `JS status: RUNNING ✅ (rows: ${data.length})`);
-  } catch (err) {
-    console.error(err);
-    setStatus("bad", `JS ERROR: ${err.message}`);
+    setStatus("running", "JS status: RUNNING ✅ (rows: " + data.length + ")");
+  } catch (e) {
+    console.error(e);
+    setStatus("error", "JS ERROR: " + e.message);
   }
-})();
+});
 </script>
 
 </body>

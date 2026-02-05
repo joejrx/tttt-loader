@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TTTT Loader – Prototype (Category Filter)</title>
+  <title>TTTT Loader – Prototype (Full Table)</title>
 
   <style>
     body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.45; }
@@ -16,19 +16,6 @@
     .running { background:#d4edda; color:#155724; }
     .error { background:#f8d7da; color:#721c24; }
 
-    .controls {
-      display:flex; flex-wrap:wrap; gap:12px; align-items:center;
-      margin: 10px 0 6px;
-    }
-    label { font-weight: 700; }
-    select {
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      background: #fff;
-    }
-
     .wrap { overflow-x:auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; min-width: 1600px; }
     th, td { border: 1px solid #ccc; padding: 8px 10px; vertical-align: top; }
@@ -40,16 +27,9 @@
 
 <body>
   <h1>CFalls Product Terpene Loader (Prototype)</h1>
-  <div class="small">TTTT-style layout • Filter: Product Type • Default: Flower • Sort: Total Terpenes (desc), then BetaCaryphyllene (desc)</div>
+  <div class="small">TTTT-style layout • Sort: Total Terpenes (desc), then BetaCaryphyllene (desc)</div>
 
   <div id="jsStatus" class="status checking">JS status: (checking…)</div>
-
-  <div class="controls">
-    <label for="categorySelect">Category:</label>
-    <select id="categorySelect" aria-label="Category filter">
-      <!-- populated by JS; NO "All" option -->
-    </select>
-  </div>
 
   <div class="wrap">
     <table id="tbl">
@@ -61,145 +41,159 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   var statusEl = document.getElementById("jsStatus");
-  var categorySelect = document.getElementById("categorySelect");
 
   function setStatus(cls, msg) {
     statusEl.className = "status " + cls;
     statusEl.textContent = msg;
   }
 
-  // ✅ prove JS ran immediately
-  setStatus("running", "JS status: RUNNING ✅ (initializing…)");
+  // ✅ First thing: prove JS ran
+  setStatus("running", "JS status: RUNNING ✅ (building table…)");
 
   try {
-  // ------------------------------------------------------------
-// 3) CFalls TSV pasted as a STRING, then parsed into `data`
-// ------------------------------------------------------------
+    // ------------------------------------------------------------
+    // 1) Canonical non-terp columns (TTTT order)
+    // ------------------------------------------------------------
+    var baseCols = [
+      { key: "Product", label: "Product", type: "txt" },
+      { key: "Location", label: "Location", type: "txt" },
+      { key: "Product Type", label: "Product Type", type: "txt" },
+      { key: "Room", label: "Room", type: "txt" },
+      { key: "THC", label: "THC", type: "num_pct" },
+      { key: "Total Terpenes", label: "Total Terpenes", type: "num_pct" }
+    ];
 
-// PASTE YOUR TSV HERE (keep header row + product rows)
-var RAW_TSV = String.raw`Product    Location    Category    Room    THC    TotalTerpenes    BetaCaryphyllene    Limonene    Linalool    BetaMyrcene    Humulene    Terpinolene    BetaPinene    AlphaPinene    ThreeCarene    AlphaTerpinene    BetaEudesmol    Bisabolol    Camphene    Eucalyptol    Geraniol    Guaiol    Isopulegol    Nerolidol    NerolidolTwo    Ocimene    OcimeneOne    OcimeneTwo    pCymene    pIsopropyltouluene    Terpinene    TransNerolidol    Batch    Cannabinoid    CaryophylleneOxide
-Rebel | Double OG CHM | 1g Live Resin Budder    Farmaceuticalrx (Cuyahoga Falls)    Budder    Sales Floor    666.0 mg/g        8.48 mg/g    30.5 mg/g    13.4 mg/g    28.7 mg/g    3.5 mg/g        4.11 mg/g    2.01 mg/g        0.02 mg/g        2.3 mg/g        0.0 mg/g                                                    1A407030000332D000023614        0.26 mg/g
-Meigs County | LA Kush Cake | 14.15g Country Cut    Farmaceuticalrx (Cuyahoga Falls)    Flower    Sales Floor    22.9 %        0.67 %    0.73 %    0.24 %    0.6 %    0.2 %        0.12 %    0.06 %        0.0 %        0.06 %                                                            1A40703000000C9000006828        0.01 %
-Pure Ohio Wellness | Gelato | 2.83g    Farmaceuticalrx (Cuyahoga Falls)    Flower    Sales Floor    26.3 %        0.91 %    0.91 %    0.48 %        0.35 %                                                                                        1A4070300002C25000019210
-`;
+    // ------------------------------------------------------------
+    // 2) Canonical terp columns (exact order from your desktop TTTT)
+    // ------------------------------------------------------------
+    var terpCols = [
+      "BetaCaryphyllene",
+      "Limonene",
+      "Linalool",
+      "BetaMyrcene",
+      "Humulene",
+      "Terpinolene",
+      "BetaPinene",
+      "AlphaPinene",
+      "ThreeCarene",
+      "AlphaTerpinene",
+      "BetaEudesmol",
+      "Bisabolol",
+      "Camphene",
+      "Eucalyptol",
+      "Geraniol",
+      "Guaiol",
+      "Isopulegol",
+      "Nerolidol",
+      "NerolidolTwo",
+      "Ocimene",
+      "OcimeneOne",
+      "OcimeneTwo",
+      "pCymene",
+      "pIsopropyltouluene",
+      "Terpinene",
+      "TransNerolidol"
+    ];
 
-// --- helpers to parse TSV that may come in as tabs OR multiple spaces ---
-function splitFields(line) {
-  // If it contains tabs, split on tabs (best for Excel copy/paste)
-  if (line.indexOf("\t") >= 0) return line.split("\t");
-  // Fallback: split on 2+ spaces (some paste formats collapse tabs)
-  return line.trim().split(/ {2,}/);
-}
+    // Show blanks instead of 0.00% (matches how your export looks)
+    var BLANK_ZERO = true;
 
-function parseTsvToRows(tsv) {
-  var lines = tsv.split(/\r?\n/).filter(function (l) { return l.trim().length > 0; });
-  if (lines.length < 2) return [];
+    // ------------------------------------------------------------
+    // 3) Sample data (baked-in)
+    // NOTE: Missing terp keys will be treated as 0.
+    // ------------------------------------------------------------
+    var data = [
+      {
+        "Product": "88 Lift | O.V. 2.0 | .84g Rechargable Disposable Vape",
+        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product Type": "Vape",
+        "Room": "Sales Floor",
+        "THC": 73.90,
+        "BetaCaryphyllene": 1.05,
+        "Limonene": 1.51,
+        "Linalool": 0.41,
+        "BetaMyrcene": 0.99,
+        "Humulene": 0.03,
+        "BetaPinene": 0.28,
+        "AlphaPinene": 0.16,
+        "BetaEudesmol": 0.23
+      },
+      {
+        "Product": "Anthos | Neon Flamingo | 1g Live Resin Sauce",
+        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product Type": "Concentrate",
+        "Room": "Sales Floor",
+        "THC": 66.20,
+        "BetaCaryphyllene": 1.43,
+        "Limonene": 2.84,
+        "Linalool": 1.48,
+        "BetaMyrcene": 0.75,
+        "Humulene": 0.44
+      },
+      {
+        "Product": "Anthos | Walkabout | 14.15g Premium Flower",
+        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product Type": "Flower",
+        "Room": "Sales Floor",
+        "THC": 25.10,
+        "BetaCaryphyllene": 0.92,
+        "Limonene": 0.64,
+        "Linalool": 0.08,
+        "BetaMyrcene": 1.07,
+        "Humulene": 0.36,
+        "BetaPinene": 0.09,
+        "AlphaPinene": 0.05,
+        "Guaiol": 0.16,
+        "Isopulegol": 0.02
+      },
+      {
+        "Product": "Anthos | Walkabout | 1g Live Resin Badder",
+        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
+        "Product Type": "Concentrate",
+        "Room": "Sales Floor",
+        "THC": 63.00,
+        "BetaCaryphyllene": 2.25,
+        "Limonene": 2.98,
+        "BetaMyrcene": 1.81,
+        "Humulene": 0.90,
+        "Guaiol": 0.41
+      }
+    ];
 
-  var header = splitFields(lines[0]).map(function (h) { return h.trim(); });
-  var rows = [];
-
-  for (var i = 1; i < lines.length; i++) {
-    var parts = splitFields(lines[i]);
-    var obj = {};
-    for (var j = 0; j < header.length; j++) {
-      obj[header[j]] = (parts[j] || "").trim();
+    // ------------------------------------------------------------
+    // 4) Compute Total Terpenes using the "addition step" logic:
+    // Total Terpenes = sum(all terp columns), blanks treated as 0
+    // ------------------------------------------------------------
+    function toNum(x) {
+      var n = Number(x);
+      return isFinite(n) ? n : 0;
     }
-    rows.push(obj);
-  }
-  return rows;
-}
 
-// Converts "22.9 %", "666.0 mg/g", "" into numeric percent (22.9, 66.6, 0)
-function normalizePercent(val) {
-  if (val == null) return 0;
-  var s = String(val).trim();
-  if (!s) return 0;
-  s = s.replace(/,/g, "");
-
-  if (/mg\/g/i.test(s)) {
-    var n1 = parseFloat(s);
-    return isFinite(n1) ? (n1 / 10) : 0; // mg/g ÷ 10 = %
-  }
-  if (/%/.test(s)) {
-    var n2 = parseFloat(s);
-    return isFinite(n2) ? n2 : 0;
-  }
-  var n3 = parseFloat(s);
-  return isFinite(n3) ? n3 : 0;
-}
-
-// Map your granular Category values into the UI buckets you want
-function mapToUiCategory(rawCat) {
-  var c = String(rawCat || "").toLowerCase();
-
-  if (c === "flower") return "Flower";
-
-  // Vape bucket
-  if (c.includes("vape") || c.includes("cartridge") || c.includes("cartridges") || c.includes("disposable")) {
-    return "Vape";
-  }
-
-  // Concentrate bucket
-  if (c.includes("budder") || c.includes("badder") || c.includes("sugar") || c.includes("sauce") ||
-      c.includes("resin") || c.includes("rosin") || c.includes("wax") || c.includes("shatter")) {
-    return "Concentrate";
-  }
-
-  // Ignore everything else for now (edible/tincture/etc.)
-  return "";
-}
-
-// Build `data` from TSV (this is what your existing code expects)
-var parsed = parseTsvToRows(RAW_TSV);
-
-var data = parsed.map(function (r) {
-  var uiCat = mapToUiCategory(r.Category);
-
-  if (!uiCat) return null; // drop categories we aren't showing yet
-
-  var row = {
-    "Product": r.Product || "",
-    "Location": r.Location || "",
-    "Product Type": uiCat,    // internal field used by the dropdown
-    "Room": r.Room || "",
-    "THC": normalizePercent(r.THC),
-    "Total Terpenes": 0
-  };
-
-  // normalize terp values into numeric percents
-  for (var t = 0; t < terpCols.length; t++) {
-    var k = terpCols[t];
-    row[k] = normalizePercent(r[k]);
-  }
-
-  return row;
-}).filter(Boolean);
-
-    // ------------------------------------------------------------
-    // 4) Compute Total Terpenes (addition step across canonical keys)
-    // ------------------------------------------------------------
     for (var i = 0; i < data.length; i++) {
       var row = data[i];
       var total = 0;
-
       for (var t = 0; t < terpCols.length; t++) {
         var k = terpCols[t];
-        row[k] = toNum(row[k]);  // normalize missing to 0
+        row[k] = toNum(row[k]);        // normalize missing to 0
         total += row[k];
       }
-
-      row["Total Terpenes"] = Math.round(total * 100) / 100;
+      row["Total Terpenes"] = Math.round(total * 100) / 100; // 2 decimals
     }
 
+    // Sort by Total Terpenes DESC, then BetaCaryphyllene DESC
+    data.sort(function(a, b) {
+      if (b["Total Terpenes"] !== a["Total Terpenes"]) return b["Total Terpenes"] - a["Total Terpenes"];
+      return toNum(b["BetaCaryphyllene"]) - toNum(a["BetaCaryphyllene"]);
+    });
+
     // ------------------------------------------------------------
-    // 5) Build header row once (TTTT order)
+    // 5) Build header row (TTTT order)
     // ------------------------------------------------------------
     var hdr = document.getElementById("hdrRow");
     var hdrHtml = "";
 
     for (var c = 0; c < baseCols.length; c++) {
-      var isNum = baseCols[c].type.indexOf("num") === 0;
-      hdrHtml += '<th class="' + (isNum ? "num" : "txt") + '">' + baseCols[c].label + '</th>';
+      hdrHtml += '<th class="' + (baseCols[c].type.indexOf("num") === 0 ? "num" : "txt") + '">' + baseCols[c].label + '</th>';
     }
     for (var tc = 0; tc < terpCols.length; tc++) {
       hdrHtml += '<th class="num">' + terpCols[tc] + '</th>';
@@ -207,90 +201,48 @@ var data = parsed.map(function (r) {
     hdr.innerHTML = hdrHtml;
 
     // ------------------------------------------------------------
-    // 6) Category filter dropdown (NO "ALL", default = Flower)
+    // 6) Render rows
     // ------------------------------------------------------------
-    function uniqueSorted(list) {
-      var map = {};
-      for (var j = 0; j < list.length; j++) map[list[j]] = true;
-      var out = Object.keys(map);
-      out.sort();
-      return out;
+    var tbody = document.querySelector("#tbl tbody");
+    tbody.innerHTML = "";
+
+    function fmtPct(n) {
+      var num = toNum(n);
+      if (BLANK_ZERO && num === 0) return "";
+      return num.toFixed(2) + " %";
     }
 
-    var categories = uniqueSorted(data.map(function (r) { return r["Product Type"] || ""; }).filter(Boolean));
+    for (var r = 0; r < data.length; r++) {
+      var row2 = data[r];
+      var tr = document.createElement("tr");
 
-    // Populate select
-    categorySelect.innerHTML = "";
-    for (var k2 = 0; k2 < categories.length; k2++) {
-      var opt = document.createElement("option");
-      opt.value = categories[k2];
-      opt.textContent = categories[k2];
-      categorySelect.appendChild(opt);
-    }
+      // base columns
+      for (var bc = 0; bc < baseCols.length; bc++) {
+        var col = baseCols[bc];
+        var td = document.createElement("td");
 
-    // Default to Flower if present; otherwise first available
-    var defaultCat = categories.indexOf("Flower") >= 0 ? "Flower" : (categories[0] || "");
-    categorySelect.value = defaultCat;
-
-    // ------------------------------------------------------------
-    // 7) Render function (applies filter + sorting)
-    // ------------------------------------------------------------
-    function render() {
-      var selected = categorySelect.value;
-
-      // Filter (no ALL)
-      var filtered = data.filter(function (r) {
-        return (r["Product Type"] || "") === selected;
-      });
-
-      // Sort (Total Terpenes desc, then BetaCaryphyllene desc)
-      filtered.sort(function(a, b) {
-        if (b["Total Terpenes"] !== a["Total Terpenes"]) return b["Total Terpenes"] - a["Total Terpenes"];
-        return toNum(b["BetaCaryphyllene"]) - toNum(a["BetaCaryphyllene"]);
-      });
-
-      // Render rows
-      var tbody = document.querySelector("#tbl tbody");
-      tbody.innerHTML = "";
-
-      for (var r = 0; r < filtered.length; r++) {
-        var row2 = filtered[r];
-        var tr = document.createElement("tr");
-
-        // base columns
-        for (var bc = 0; bc < baseCols.length; bc++) {
-          var col = baseCols[bc];
-          var td = document.createElement("td");
-
-          if (col.type === "txt") {
-            td.className = "txt";
-            td.textContent = row2[col.key] || "";
-          } else if (col.type === "num_pct") {
-            td.className = "num";
-            td.textContent = fmtPct(row2[col.key]);
-          }
-          tr.appendChild(td);
+        if (col.type === "txt") {
+          td.className = "txt";
+          td.textContent = row2[col.key] || "";
+        } else if (col.type === "num_pct") {
+          td.className = "num";
+          td.textContent = fmtPct(row2[col.key]);
         }
-
-        // terp columns
-        for (var tt = 0; tt < terpCols.length; tt++) {
-          var td2 = document.createElement("td");
-          td2.className = "num";
-          td2.textContent = fmtPct(row2[terpCols[tt]]);
-          tr.appendChild(td2);
-        }
-
-        tbody.appendChild(tr);
+        tr.appendChild(td);
       }
 
-      setStatus("running", "JS status: RUNNING ✅ (category: " + selected + " • rows: " + filtered.length + ")");
+      // terp columns
+      for (var tt = 0; tt < terpCols.length; tt++) {
+        var td2 = document.createElement("td");
+        td2.className = "num";
+        td2.textContent = fmtPct(row2[terpCols[tt]]);
+        tr.appendChild(td2);
+      }
+
+      tbody.appendChild(tr);
     }
 
-    categorySelect.addEventListener("change", render);
-
-    // Initial render (default Flower)
-    render();
-
+    setStatus("running", "JS status: RUNNING ✅ (rows: " + data.length + ")");
   } catch (e) {
     console.error(e);
     setStatus("error", "JS ERROR: " + e.message);

@@ -3,47 +3,82 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TTTT Loader – Smoke Test</title>
+    <title>CFalls Loader – Prototype</title>
+
     <style>
         body {
             font-family: Arial, sans-serif;
             padding: 40px;
-            line-height: 1.6;
+            line-height: 1.5;
         }
-        .status {
-            font-size: 1.4rem;
-            padding: 10px 14px;
-            border-radius: 6px;
-            display: inline-block;
-            margin-top: 10px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
         }
-        .checking {
-            background: #ffeeba;
-            color: #7a5a00;
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px 10px;
+            text-align: left;
         }
-        .running {
-            background: #d4edda;
-            color: #155724;
+        th {
+            background: #efefef;
         }
     </style>
 </head>
 
 <body>
 
-    <h1>Smoke Test: JS Execution</h1>
-    <p>This page only tests whether JavaScript is loading and running on GitHub Pages.</p>
+    <h1>CFalls Product Terpene Loader (Prototype)</h1>
+    <p>This version uses a baked-in JSON list and sorts by Total Terps and Caryophyllene.</p>
 
-    <div id="jsStatus" class="status checking">JS status: (checking…)</div>
+    <table id="tbl">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>THC%</th>
+                <th>Caryophyllene</th>
+                <th>Total Terps</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-    <script>
-        // If this script runs, the status text updates immediately.
-        document.addEventListener("DOMContentLoaded", () => {
-            const el = document.getElementById("jsStatus");
-            el.textContent = "JS status: RUNNING ✅";
-            el.classList.remove("checking");
-            el.classList.add("running");
-        });
-    </script>
+<script>
+// -----------------------------
+// CFALLS SAMPLE DATA (HARDCODED)
+// -----------------------------
+const data = [
+    { product: "Wedding Cake", thc: 27.4, cary: 0.89, lim: 0.42, mir: 0.25 },
+    { product: "GMO", thc: 29.1, cary: 1.12, lim: 0.18, mir: 0.44 },
+    { product: "Blueberry Muffin", thc: 23.8, cary: 0.41, lim: 0.55, mir: 0.36 },
+    { product: "Apples & Bananas", thc: 30.2, cary: 0.72, lim: 0.60, mir: 0.29 }
+];
+
+// Compute total terpenes
+data.forEach(item => {
+    item.total = Number((item.cary + item.lim + item.mir).toFixed(2));
+});
+
+// Sort by Total Terps DESC, then Caryophyllene DESC
+data.sort((a, b) => {
+    if (b.total !== a.total) return b.total - a.total;
+    return b.cary - a.cary;
+});
+
+// Inject into table
+const tbody = document.querySelector("#tbl tbody");
+data.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+        <td>${row.product}</td>
+        <td>${row.thc}%</td>
+        <td>${row.cary}</td>
+        <td>${row.total}</td>
+    `;
+    tbody.appendChild(tr);
+});
+</script>
 
 </body>
 </html>

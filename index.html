@@ -135,63 +135,15 @@ document.addEventListener("DOMContentLoaded", function () {
     // NOTE: Missing terp keys will be treated as 0.
     // Product Type values here are what the dropdown will use.
     // ------------------------------------------------------------
-    var data = [
-      {
-        "Product": "Anthos | Walkabout | 14.15g Premium Flower",
-        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
-        "Product Type": "Flower",
-        "Room": "Sales Floor",
-        "THC": 25.10,
-        "BetaCaryphyllene": 0.92,
-        "Limonene": 0.64,
-        "Linalool": 0.08,
-        "BetaMyrcene": 1.07,
-        "Humulene": 0.36,
-        "BetaPinene": 0.09,
-        "AlphaPinene": 0.05,
-        "Guaiol": 0.16,
-        "Isopulegol": 0.02
-      },
-      {
-        "Product": "Anthos | Neon Flamingo | 1g Live Resin Sauce",
-        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
-        "Product Type": "Concentrate",
-        "Room": "Sales Floor",
-        "THC": 66.20,
-        "BetaCaryphyllene": 1.43,
-        "Limonene": 2.84,
-        "Linalool": 1.48,
-        "BetaMyrcene": 0.75,
-        "Humulene": 0.44
-      },
-      {
-        "Product": "88 Lift | O.V. 2.0 | .84g Rechargable Disposable Vape",
-        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
-        "Product Type": "Vape",
-        "Room": "Sales Floor",
-        "THC": 73.90,
-        "BetaCaryphyllene": 1.05,
-        "Limonene": 1.51,
-        "Linalool": 0.41,
-        "BetaMyrcene": 0.99,
-        "Humulene": 0.03,
-        "BetaPinene": 0.28,
-        "AlphaPinene": 0.16,
-        "BetaEudesmol": 0.23
-      },
-      {
-        "Product": "Anthos | Walkabout | 1g Live Resin Badder",
-        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
-        "Product Type": "Concentrate",
-        "Room": "Sales Floor",
-        "THC": 63.00,
-        "BetaCaryphyllene": 2.25,
-        "Limonene": 2.98,
-        "BetaMyrcene": 1.81,
-        "Humulene": 0.90,
-        "Guaiol": 0.41
-      }
-    ];
+   // --------------
+// PASTE CFALLS TSV HERE (header row + rows)
+// --------------
+var RAW_TSV = String.raw`Product    Location    Category    Room    THC    TotalTerpenes    BetaCaryphyllene    Limonene    Linalool    BetaMyrcene    Humulene    Terpinolene    BetaPinene    AlphaPinene    ThreeCarene    AlphaTerpinene    BetaEudesmol    Bisabolol    Camphene    Eucalyptol    Geraniol    Guaiol    Isopulegol    Nerolidol    NerolidolTwo    Ocimene    OcimeneOne    OcimeneTwo    pCymene    pIsopropyltouluene    Terpinene    TransNerolidol    Batch    Cannabinoid    CaryophylleneOxide
+Rebel | Double OG CHM | 1g Live Resin Budder    Farmaceuticalrx (Cuyahoga Falls)    Budder    Sales Floor    666.0 mg/g        8.48 mg/g    30.5 mg/g    13.4 mg/g    28.7 mg/g    3.5 mg/g        4.11 mg/g    2.01 mg/g        0.02 mg/g        2.3 mg/g        0.0 mg/g                                                    1A407030000332D000023614        0.26 mg/g
+Meigs County | LA Kush Cake | 14.15g Country Cut    Farmaceuticalrx (Cuyahoga Falls)    Flower    Sales Floor    22.9 %        0.67 %    0.73 %    0.24 %    0.6 %    0.2 %        0.12 %    0.06 %        0.0 %        0.06 %                                                            1A40703000000C9000006828        0.01 %
+Pure Ohio Wellness | Gelato | 2.83g    Farmaceuticalrx (Cuyahoga Falls)    Flower    Sales Floor    26.3 %        0.91 %    0.91 %    0.48 %        0.35 %                                                                                        1A4070300002C25000019210        
+... paste the rest of your rows ...
+`;
 
     // ------------------------------------------------------------
     // 4) Compute Total Terpenes (addition step across canonical keys)

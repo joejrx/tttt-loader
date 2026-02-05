@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TTTT Loader – Prototype (Category Filter)</title>
+  <title>TTTT Loader – XLSX + Search (Prototype)</title>
 
   <style>
     body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.45; }
-    .small { color:#555; margin-top: 4px; }
+    .small { color:#555; margin: 6px 0 12px; }
     .status {
-      display:inline-block; padding:10px 12px; border-radius:8px; margin: 10px 0 18px;
+      display:inline-block; padding:10px 12px; border-radius:8px; margin: 10px 0 14px;
       font-weight: 800;
     }
     .checking { background:#ffeeba; color:#7a5a00; }
@@ -17,17 +17,22 @@
     .error { background:#f8d7da; color:#721c24; }
 
     .controls {
-      display:flex; flex-wrap:wrap; gap:12px; align-items:center;
-      margin: 10px 0 6px;
+      display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;
+      margin: 10px 0 10px;
+    }
+    .ctrl {
+      display:flex; flex-direction:column; gap:6px;
+      min-width: 220px;
     }
     label { font-weight: 700; }
-    select {
+    input[type="file"], input[type="text"], select {
       padding: 8px 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 14px;
       background: #fff;
     }
+    input[type="text"] { width: 260px; }
 
     .wrap { overflow-x:auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; min-width: 1600px; }
@@ -35,20 +40,34 @@
     th { background:#efefef; position: sticky; top: 0; z-index: 2; }
     th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
     th.txt, td.txt { text-align: left; }
+    .muted { color:#777; }
   </style>
 </head>
 
 <body>
-  <h1>CFalls Product Terpene Loader (Prototype)</h1>
-  <div class="small">TTTT-style layout • Filter: Product Type • Default: Flower • Sort: Total Terpenes (desc), then BetaCaryphyllene (desc)</div>
+  <h1>TTTT Loader (Prototype)</h1>
+  <div class="small">
+    XLSX upload • Category filter (Flower/Vape/Concentrate) • Product search • Sort: Total Terpenes → BetaCaryphyllene
+  </div>
 
   <div id="jsStatus" class="status checking">JS status: (checking…)</div>
 
   <div class="controls">
-    <label for="categorySelect">Category:</label>
-    <select id="categorySelect" aria-label="Category filter">
-      <!-- populated by JS; NO "All" option -->
-    </select>
+    <div class="ctrl">
+      <label for="fileInput">Upload XLSX</label>
+      <input id="fileInput" type="file" accept=".xlsx,.xls" />
+      <div class="small muted">Tip: use the Dutchie export as-is.</div>
+    </div>
+
+    <div class="ctrl">
+      <label for="categorySelect">Category</label>
+      <select id="categorySelect" aria-label="Category filter"></select>
+    </div>
+
+    <div class="ctrl">
+      <label for="searchInput">Search (Product)</label>
+      <input id="searchInput" type="text" placeholder="e.g. Anthos, 2.83g, Live Resin…" />
+    </div>
   </div>
 
   <div class="wrap">
@@ -58,10 +77,15 @@
     </table>
   </div>
 
+  <!-- SheetJS (XLSX parser) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   var statusEl = document.getElementById("jsStatus");
+  var fileInput = document.getElementById("fileInput");
   var categorySelect = document.getElementById("categorySelect");
+  var searchInput = document.getElementById("searchInput");
 
   function setStatus(cls, msg) {
     statusEl.className = "status " + cls;
@@ -69,252 +93,301 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ✅ prove JS ran immediately
-  setStatus("running", "JS status: RUNNING ✅ (initializing…)");
+  setStatus("running", "JS status: RUNNING ✅ (ready for XLSX)");
 
-  try {
-    // ------------------------------------------------------------
-    // 1) Canonical non-terp columns (TTTT order)
-    // ------------------------------------------------------------
-    var baseCols = [
-      { key: "Product", label: "Product", type: "txt" },
-      { key: "Location", label: "Location", type: "txt" },
-      { key: "Product Type", label: "Product Type", type: "txt" },
-      { key: "Room", label: "Room", type: "txt" },
-      { key: "THC", label: "THC", type: "num_pct" },
-      { key: "Total Terpenes", label: "Total Terpenes", type: "num_pct" }
-    ];
+  // ------------------------------------------------------------
+  // Canonical terp order (desktop TTTT order)
+  // ------------------------------------------------------------
+  var TERP_COLS = [
+    "BetaCaryphyllene","Limonene","Linalool","BetaMyrcene","Humulene","Terpinolene","BetaPinene","AlphaPinene",
+    "ThreeCarene","AlphaTerpinene","BetaEudesmol","Bisabolol","Camphene","Eucalyptol","Geraniol","Guaiol",
+    "Isopulegol","Nerolidol","NerolidolTwo","Ocimene","OcimeneOne","OcimeneTwo","pCymene","pIsopropyltouluene",
+    "Terpinene","TransNerolidol"
+  ];
 
-    // ------------------------------------------------------------
-    // 2) Canonical terp columns (exact order from desktop TTTT)
-    // ------------------------------------------------------------
-    var terpCols = [
-      "BetaCaryphyllene",
-      "Limonene",
-      "Linalool",
-      "BetaMyrcene",
-      "Humulene",
-      "Terpinolene",
-      "BetaPinene",
-      "AlphaPinene",
-      "ThreeCarene",
-      "AlphaTerpinene",
-      "BetaEudesmol",
-      "Bisabolol",
-      "Camphene",
-      "Eucalyptol",
-      "Geraniol",
-      "Guaiol",
-      "Isopulegol",
-      "Nerolidol",
-      "NerolidolTwo",
-      "Ocimene",
-      "OcimeneOne",
-      "OcimeneTwo",
-      "pCymene",
-      "pIsopropyltouluene",
-      "Terpinene",
-      "TransNerolidol"
-    ];
+  // Base columns for table display (TTTT-ish)
+  var BASE_COLS = [
+    { key: "Product", label: "Product", type: "txt" },
+    { key: "Location", label: "Location", type: "txt" },
+    { key: "Product Type", label: "Category", type: "txt" },
+    { key: "Room", label: "Room", type: "txt" },
+    { key: "THC", label: "THC", type: "num_pct" },
+    { key: "Total Terpenes", label: "Total Terpenes", type: "num_pct" }
+  ];
 
-    // Show blanks instead of 0.00% (matches export look)
-    var BLANK_ZERO = true;
+  // UI categories: always show these (no ALL)
+  var UI_CATEGORIES = ["Flower","Vape","Concentrate"];
 
-    function toNum(x) {
-      var n = Number(x);
-      return isFinite(n) ? n : 0;
+  // Data state
+  var allRows = []; // normalized rows from XLSX
+
+  // ------------------------------------------------------------
+  // Helpers: unit normalization + category mapping + formatting
+  // ------------------------------------------------------------
+  function normalizePercent(val) {
+    // "22.9 %" -> 22.9
+    // "666.0 mg/g" -> 66.6
+    // "" -> 0
+    if (val == null) return 0;
+    var s = String(val).trim();
+    if (!s) return 0;
+    s = s.replace(/,/g, "");
+
+    if (/mg\/g/i.test(s)) {
+      var n1 = parseFloat(s);
+      return isFinite(n1) ? (n1 / 10) : 0; // mg/g ÷ 10 = %
+    }
+    if (/%/.test(s)) {
+      var n2 = parseFloat(s);
+      return isFinite(n2) ? n2 : 0;
+    }
+    var n3 = parseFloat(s);
+    return isFinite(n3) ? n3 : 0;
+  }
+
+  function fmtPct(num) {
+    var n = Number(num) || 0;
+    // Keep blank zeros like your export feel:
+    if (n === 0) return "";
+    return n.toFixed(2) + "%"; // no space
+  }
+
+  function mapToUiCategory(rawCat) {
+    // raw category could be in "Category" column, or "Product Type" column.
+    var c = String(rawCat || "").toLowerCase();
+
+    if (c === "flower") return "Flower";
+
+    // Vape bucket
+    if (c.includes("vape") || c.includes("cartridge") || c.includes("cartridges") || c.includes("disposable")) {
+      return "Vape";
     }
 
-    function fmtPct(n) {
-      var num = toNum(n);
-      if (BLANK_ZERO && num === 0) return "";
-      return num.toFixed(2) + "%"; // ✅ no space
+    // Concentrate bucket
+    if (
+      c.includes("budder") || c.includes("badder") || c.includes("sugar") || c.includes("sauce") ||
+      c.includes("resin") || c.includes("rosin") || c.includes("wax") || c.includes("shatter") ||
+      c.includes("concentrate")
+    ) {
+      return "Concentrate";
     }
 
-    // ------------------------------------------------------------
-    // 3) Sample data (baked-in)
-    // NOTE: Missing terp keys will be treated as 0.
-    // Product Type values here are what the dropdown will use.
-    // ------------------------------------------------------------
-    var data = [
-      {
-        "Product": "Anthos | Walkabout | 14.15g Premium Flower",
-        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
-        "Product Type": "Flower",
-        "Room": "Sales Floor",
-        "THC": 25.10,
-        "BetaCaryphyllene": 0.92,
-        "Limonene": 0.64,
-        "Linalool": 0.08,
-        "BetaMyrcene": 1.07,
-        "Humulene": 0.36,
-        "BetaPinene": 0.09,
-        "AlphaPinene": 0.05,
-        "Guaiol": 0.16,
-        "Isopulegol": 0.02
-      },
-      {
-        "Product": "Anthos | Neon Flamingo | 1g Live Resin Sauce",
-        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
-        "Product Type": "Concentrate",
-        "Room": "Sales Floor",
-        "THC": 66.20,
-        "BetaCaryphyllene": 1.43,
-        "Limonene": 2.84,
-        "Linalool": 1.48,
-        "BetaMyrcene": 0.75,
-        "Humulene": 0.44
-      },
-      {
-        "Product": "88 Lift | O.V. 2.0 | .84g Rechargable Disposable Vape",
-        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
-        "Product Type": "Vape",
-        "Room": "Sales Floor",
-        "THC": 73.90,
-        "BetaCaryphyllene": 1.05,
-        "Limonene": 1.51,
-        "Linalool": 0.41,
-        "BetaMyrcene": 0.99,
-        "Humulene": 0.03,
-        "BetaPinene": 0.28,
-        "AlphaPinene": 0.16,
-        "BetaEudesmol": 0.23
-      },
-      {
-        "Product": "Anthos | Walkabout | 1g Live Resin Badder",
-        "Location": "Farmaceuticalrx (Cuyahoga Falls)",
-        "Product Type": "Concentrate",
-        "Room": "Sales Floor",
-        "THC": 63.00,
-        "BetaCaryphyllene": 2.25,
-        "Limonene": 2.98,
-        "BetaMyrcene": 1.81,
-        "Humulene": 0.90,
-        "Guaiol": 0.41
-      }
-    ];
+    // If it already matches our UI buckets exactly:
+    if (c === "vape") return "Vape";
+    if (c === "concentrate") return "Concentrate";
 
-    // ------------------------------------------------------------
-    // 4) Compute Total Terpenes (addition step across canonical keys)
-    // ------------------------------------------------------------
-    for (var i = 0; i < data.length; i++) {
-      var row = data[i];
-      var total = 0;
+    // Ignore other categories for now (edible/tincture/etc.)
+    return "";
+  }
 
-      for (var t = 0; t < terpCols.length; t++) {
-        var k = terpCols[t];
-        row[k] = toNum(row[k]);  // normalize missing to 0
-        total += row[k];
-      }
+  function safeStr(x) { return (x == null) ? "" : String(x); }
 
-      row["Total Terpenes"] = Math.round(total * 100) / 100;
-    }
-
-    // ------------------------------------------------------------
-    // 5) Build header row once (TTTT order)
-    // ------------------------------------------------------------
+  // ------------------------------------------------------------
+  // Build header row once
+  // ------------------------------------------------------------
+  function buildHeader() {
     var hdr = document.getElementById("hdrRow");
-    var hdrHtml = "";
+    var html = "";
 
-    for (var c = 0; c < baseCols.length; c++) {
-      var isNum = baseCols[c].type.indexOf("num") === 0;
-      hdrHtml += '<th class="' + (isNum ? "num" : "txt") + '">' + baseCols[c].label + '</th>';
+    for (var i = 0; i < BASE_COLS.length; i++) {
+      var col = BASE_COLS[i];
+      var isNum = col.type.indexOf("num") === 0;
+      html += '<th class="' + (isNum ? "num" : "txt") + '">' + col.label + '</th>';
     }
-    for (var tc = 0; tc < terpCols.length; tc++) {
-      hdrHtml += '<th class="num">' + terpCols[tc] + '</th>';
+    for (var t = 0; t < TERP_COLS.length; t++) {
+      html += '<th class="num">' + TERP_COLS[t] + '</th>';
     }
-    hdr.innerHTML = hdrHtml;
+    hdr.innerHTML = html;
+  }
 
-    // ------------------------------------------------------------
-    // 6) Category filter dropdown (NO "ALL", default = Flower)
-    // ------------------------------------------------------------
-    function uniqueSorted(list) {
-      var map = {};
-      for (var j = 0; j < list.length; j++) map[list[j]] = true;
-      var out = Object.keys(map);
-      out.sort();
-      return out;
-    }
+  buildHeader();
 
-    var categories = uniqueSorted(data.map(function (r) { return r["Product Type"] || ""; }).filter(Boolean));
-
-    // Populate select
+  // ------------------------------------------------------------
+  // Category dropdown: always show 3 options, default Flower
+  // ------------------------------------------------------------
+  function initCategoryDropdown() {
     categorySelect.innerHTML = "";
-    for (var k2 = 0; k2 < categories.length; k2++) {
+    for (var i = 0; i < UI_CATEGORIES.length; i++) {
       var opt = document.createElement("option");
-      opt.value = categories[k2];
-      opt.textContent = categories[k2];
+      opt.value = UI_CATEGORIES[i];
+      opt.textContent = UI_CATEGORIES[i];
       categorySelect.appendChild(opt);
     }
+    categorySelect.value = "Flower";
+  }
 
-    // Default to Flower if present; otherwise first available
-    var defaultCat = categories.indexOf("Flower") >= 0 ? "Flower" : (categories[0] || "");
-    categorySelect.value = defaultCat;
+  initCategoryDropdown();
 
-    // ------------------------------------------------------------
-    // 7) Render function (applies filter + sorting)
-    // ------------------------------------------------------------
-    function render() {
-      var selected = categorySelect.value;
+  // ------------------------------------------------------------
+  // Render pipeline: category filter + product search + sorting
+  // ------------------------------------------------------------
+  function render() {
+    var selectedCat = categorySelect.value;
+    var q = searchInput.value.trim().toLowerCase();
 
-      // Filter (no ALL)
-      var filtered = data.filter(function (r) {
-        return (r["Product Type"] || "") === selected;
-      });
+    var filtered = allRows.filter(function (r) {
+      if (r["Product Type"] !== selectedCat) return false;
+      if (!q) return true;
+      // Search is intentionally ONLY on Product (your naming convention rocks)
+      return safeStr(r.Product).toLowerCase().includes(q);
+    });
 
-      // Sort (Total Terpenes desc, then BetaCaryphyllene desc)
-      filtered.sort(function(a, b) {
-        if (b["Total Terpenes"] !== a["Total Terpenes"]) return b["Total Terpenes"] - a["Total Terpenes"];
-        return toNum(b["BetaCaryphyllene"]) - toNum(a["BetaCaryphyllene"]);
-      });
+    // Sort: Total Terpenes desc, then BetaCaryphyllene desc
+    filtered.sort(function (a, b) {
+      if (b["Total Terpenes"] !== a["Total Terpenes"]) return b["Total Terpenes"] - a["Total Terpenes"];
+      return (b.BetaCaryphyllene || 0) - (a.BetaCaryphyllene || 0);
+    });
 
-      // Render rows
-      var tbody = document.querySelector("#tbl tbody");
-      tbody.innerHTML = "";
+    var tbody = document.querySelector("#tbl tbody");
+    tbody.innerHTML = "";
 
-      for (var r = 0; r < filtered.length; r++) {
-        var row2 = filtered[r];
-        var tr = document.createElement("tr");
+    for (var i = 0; i < filtered.length; i++) {
+      var row = filtered[i];
 
-        // base columns
-        for (var bc = 0; bc < baseCols.length; bc++) {
-          var col = baseCols[bc];
-          var td = document.createElement("td");
-
-          if (col.type === "txt") {
-            td.className = "txt";
-            td.textContent = row2[col.key] || "";
-          } else if (col.type === "num_pct") {
-            td.className = "num";
-            td.textContent = fmtPct(row2[col.key]);
-          }
-          tr.appendChild(td);
+      var baseCells = "";
+      for (var bc = 0; bc < BASE_COLS.length; bc++) {
+        var col = BASE_COLS[bc];
+        if (col.type === "txt") {
+          baseCells += '<td class="txt">' + (safeStr(row[col.key])) + '</td>';
+        } else {
+          baseCells += '<td class="num">' + fmtPct(row[col.key]) + '</td>';
         }
-
-        // terp columns
-        for (var tt = 0; tt < terpCols.length; tt++) {
-          var td2 = document.createElement("td");
-          td2.className = "num";
-          td2.textContent = fmtPct(row2[terpCols[tt]]);
-          tr.appendChild(td2);
-        }
-
-        tbody.appendChild(tr);
       }
 
-      setStatus("running", "JS status: RUNNING ✅ (category: " + selected + " • rows: " + filtered.length + ")");
+      var terpCells = "";
+      for (var t = 0; t < TERP_COLS.length; t++) {
+        var k = TERP_COLS[t];
+        terpCells += '<td class="num">' + fmtPct(row[k]) + '</td>';
+      }
+
+      var tr = document.createElement("tr");
+      tr.innerHTML = baseCells + terpCells;
+      tbody.appendChild(tr);
     }
 
-    categorySelect.addEventListener("change", render);
-
-    // Initial render (default Flower)
-    render();
-
-  } catch (e) {
-    console.error(e);
-    setStatus("error", "JS ERROR: " + e.message);
+    setStatus("running",
+      "JS status: RUNNING ✅ (category: " + selectedCat +
+      " • rows: " + filtered.length +
+      (q ? " • search: “" + q + "”" : "") +
+      ")"
+    );
   }
+
+  // Debounce for nicer typing on mobile/iPad
+  var searchTimer = null;
+  function onSearchChange() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(render, 120);
+  }
+
+  categorySelect.addEventListener("change", render);
+  searchInput.addEventListener("input", onSearchChange);
+
+  // ------------------------------------------------------------
+  // XLSX loader
+  // ------------------------------------------------------------
+  function findColumn(obj, candidates) {
+    // returns the first matching key present in obj (case-insensitive)
+    var keys = Object.keys(obj || {});
+    for (var c = 0; c < candidates.length; c++) {
+      var want = candidates[c].toLowerCase();
+      for (var k = 0; k < keys.length; k++) {
+        if (keys[k].toLowerCase() === want) return keys[k];
+      }
+    }
+    return null;
+  }
+
+  function normalizeRow(raw) {
+    // Accept column naming variants: Category vs Product Type, TotalTerpenes vs Total Terpenes, etc.
+    var productKey = findColumn(raw, ["Product"]);
+    var locKey     = findColumn(raw, ["Location"]);
+    var roomKey    = findColumn(raw, ["Room"]);
+    var catKey     = findColumn(raw, ["Category", "Product Type", "ProductType"]);
+    var thcKey     = findColumn(raw, ["THC", "THC%","THC %"]);
+
+    var rawCat = catKey ? raw[catKey] : "";
+    var uiCat = mapToUiCategory(rawCat);
+    if (!uiCat) return null; // skip categories we aren't supporting yet
+
+    var row = {
+      "Product": productKey ? safeStr(raw[productKey]) : "",
+      "Location": locKey ? safeStr(raw[locKey]) : "",
+      "Room": roomKey ? safeStr(raw[roomKey]) : "",
+      "Product Type": uiCat,
+      "THC": normalizePercent(thcKey ? raw[thcKey] : ""),
+      "Total Terpenes": 0
+    };
+
+    // Terps
+    var total = 0;
+    for (var t = 0; t < TERP_COLS.length; t++) {
+      var terpName = TERP_COLS[t];
+      var terpKey = findColumn(raw, [terpName]);
+      var v = normalizePercent(terpKey ? raw[terpKey] : "");
+      row[terpName] = v;
+      total += v;
+    }
+    row["Total Terpenes"] = Math.round(total * 100) / 100;
+
+    // Skip empty product rows
+    if (!row.Product.trim()) return null;
+
+    return row;
+  }
+
+  fileInput.addEventListener("change", function (evt) {
+    var file = evt.target.files && evt.target.files[0];
+    if (!file) return;
+
+    setStatus("running", "JS status: RUNNING ✅ (reading XLSX…)");
+
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, { type: "array" });
+
+        // Use first sheet
+        var sheetName = wb.SheetNames[0];
+        var ws = wb.Sheets[sheetName];
+
+        // Convert to JSON rows
+        var rawRows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+        // Normalize rows
+        var normalized = [];
+        for (var i = 0; i < rawRows.length; i++) {
+          var n = normalizeRow(rawRows[i]);
+          if (n) normalized.push(n);
+        }
+
+        allRows = normalized;
+
+        // Always show all categories, default Flower
+        categorySelect.value = "Flower";
+        searchInput.value = "";
+
+        setStatus("running", "JS status: RUNNING ✅ (loaded rows: " + allRows.length + ")");
+        render();
+      } catch (err) {
+        console.error(err);
+        setStatus("error", "JS ERROR: " + err.message);
+      }
+    };
+
+    reader.onerror = function () {
+      setStatus("error", "JS ERROR: failed to read file");
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+
+  // Initial render (empty state)
+  render();
 });
 </script>
 
 </body>
 </html>
+``

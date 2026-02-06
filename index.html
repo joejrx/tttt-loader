@@ -45,14 +45,7 @@
   </div>
 
   <div id="jsStatus" class="status checking">JS status: (checking…)</div>
-<script>
-  // Bootstrap marker: if you still see (checking...), the HTML is not executing scripts at all.
-  document.addEventListener("DOMContentLoaded", function () {
-    var el = document.getElementById("jsStatus");
-    el.textContent = "JS status: BOOTSTRAP RUNNING ✅";
-    el.className = "status running";
-  });
-</script>
+
   <div class="controls">
     <div class="ctrl">
       <label for="fileInput">Upload XLSX</label>
@@ -78,85 +71,8 @@
     </table>
   </div>
 
-  <!-- ✅ Self-hosted SheetJS -->
-  <script src="./vendor/xlsx.full.min.js"></script>
-
-  <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    var statusEl = document.getElementById("jsStatus");
-    var fileInput = document.getElementById("fileInput");
-    var categorySelect = document.getElementById("categorySelect");
-    var searchInput = document.getElementById("searchInput");
-
-    function setStatus(cls, msg) {
-      statusEl.className = "status " + cls;
-      statusEl.textContent = msg;
-    }
-
-    // Prove JS ran
-    setStatus("running", "JS status: RUNNING (ready for XLSX)");
-
-    // Sanity-check that XLSX library is present
-    if (typeof XLSX === "undefined") {
-      setStatus("error", "JS ERROR: XLSX library not loaded. Check /vendor/xlsx.full.min.js");
-      return;
-    }
-
-    // Canonical terp order (desktop TTTT order)
-    var TERP_COLS = [
-      "BetaCaryphyllene","Limonene","Linalool","BetaMyrcene","Humulene","Terpinolene","BetaPinene","AlphaPinene",
-      "ThreeCarene","AlphaTerpinene","BetaEudesmol","Bisabolol","Camphene","Eucalyptol","Geraniol","Guaiol",
-      "Isopulegol","Nerolidol","NerolidolTwo","Ocimene","OcimeneOne","OcimeneTwo","pCymene","pIsopropyltouluene",
-      "Terpinene","TransNerolidol"
-    ];
-
-    // Display columns
-    var BASE_COLS = [
-      { key: "Product",        label: "Product",        type: "txt" },
-      { key: "Location",       label: "Location",       type: "txt" },
-      { key: "Product Type",   label: "Category",       type: "txt" },
-      { key: "Room",           label: "Room",           type: "txt" },
-      { key: "THC",            label: "THC",            type: "num_pct" },
-      { key: "Total Terpenes", label: "Total Terpenes", type: "num_pct" }
-    ];
-
-    // Always show these categories (no ALL), default Flower
-    var UI_CATEGORIES = ["Flower","Vape","Concentrate"];
-
-    // Data state (normalized rows from XLSX)
-    var allRows = [];
-
-    function safeStr(x) { return (x == null) ? "" : String(x); }
-
-    function normalizePercent(val) {
-      // "22.9 %" -> 22.9
-      // "666.0 mg/g" -> 66.6
-      // "" -> 0
-      if (val == null) return 0;
-      var s = String(val).trim();
-      if (!s) return 0;
-      s = s.replace(/,/g, "");
-
-      if (/mg\/g/i.test(s)) {
-        var n1 = parseFloat(s);
-        return isFinite(n1) ? (n1 / 10) : 0; // mg/g ÷ 10 = %
-      }
-      if (/%/.test(s)) {
-        var n2 = parseFloat(s);
-        return isFinite(n2) ? n2 : 0;
-      }
-      var n3 = parseFloat(s);
-      return isFinite(n3) ? n3 : 0;
-    }
-
-    function fmtPct(num) {
-      var n = Number(num) || 0;
-      if (n === 0) return "";
-      return n.toFixed(2) + "%";
-    }
-
-    function mapToUiCategory(rawCat) {
-      var c = String(rawCat || "").toLowerCase();
-
-      if (c === "flower") return "Flower";
-
+  <!-- Load libraries/scripts as external files (no inline scripts) -->
+  <script src="./vendor/xlsx.full.min.js" defer></script>
+  <script src="./app/app.js" defer></script>
+</body>
+</html>

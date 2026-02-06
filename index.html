@@ -45,7 +45,14 @@
   </div>
 
   <div id="jsStatus" class="status checking">JS status: (checking…)</div>
-
+<script>
+  // Bootstrap marker: if you still see (checking...), the HTML is not executing scripts at all.
+  document.addEventListener("DOMContentLoaded", function () {
+    var el = document.getElementById("jsStatus");
+    el.textContent = "JS status: BOOTSTRAP RUNNING ✅";
+    el.className = "status running";
+  });
+</script>
   <div class="controls">
     <div class="ctrl">
       <label for="fileInput">Upload XLSX</label>

@@ -337,14 +337,14 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   fileInput.addEventListener("change", function (evt) {
-    console.log("FILE PICKED:", evt.target.files[0]?.name);
+    console.log("FILE PICKED:", console.log("START READ");evt.target.files[0]?.name);
     var file = evt.target.files && evt.target.files[0];
     if (!file) return;
 
     setStatus("running", "JS status: RUNNING ✅ (reading XLSX…)");
 
     var reader = new FileReader();
-    reader.onload = function (e) {
+    reader.onload = function (e) {console.log("FILE READ OK, bytes:", e.target.result.byteLength);
       try {
         var data = new Uint8Array(e.target.result);
         var wb = XLSX.read(data, { type: "array" });
@@ -355,7 +355,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Convert to JSON rows
         var rawRows = XLSX.utils.sheet_to_json(ws, { defval: "" });
-
+console.log("SHEET:", sheetName, "RAW ROWS:", rawRows.length);
+console.log("FIRST ROW KEYS:", rawRows[0] ? Object.keys(rawRows[0]) : "(none)");
+console.log("FIRST ROW SAMPLE:", rawRows[0] || "(none)");
         // Normalize rows
         var normalized = [];
         for (var i = 0; i < rawRows.length; i++) {

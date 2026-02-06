@@ -3,26 +3,153 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TTTT Loader – Smoke Test</title>
+  <title>TTTT Loader – XLSX + Search (Self-hosted)</title>
+
   <style>
-    body { font-family: Arial, sans-serif; padding: 40px; }
-    .status { display:inline-block; padding:10px 12px; border-radius:8px; font-weight:800; }
+    body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.45; }
+    .small { color:#555; margin: 6px 0 12px; }
+    .status {
+      display:inline-block; padding:10px 12px; border-radius:8px; margin: 10px 0 14px;
+      font-weight: 800;
+    }
     .checking { background:#ffeeba; color:#7a5a00; }
-    .running { background:#d4edda; color:#155724; }
+    .running  { background:#d4edda; color:#155724; }
+    .error    { background:#f8d7da; color:#721c24; }
+
+    .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin: 10px 0 10px; }
+    .ctrl { display:flex; flex-direction:column; gap:6px; min-width: 220px; }
+    label { font-weight: 700; }
+    input[type="file"], input[type="text"], select {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      background: #fff;
+    }
+    input[type="text"] { width: 260px; }
+
+    .wrap { overflow-x:auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; min-width: 1600px; }
+    th, td { border: 1px solid #ccc; padding: 8px 10px; vertical-align: top; }
+    th { background:#efefef; position: sticky; top: 0; z-index: 2; }
+    th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    th.txt, td.txt { text-align: left; }
+    .muted { color:#777; }
   </style>
 </head>
+
 <body>
-  <h1>Smoke Test</h1>
+  <h1>TTTT Loader (Prototype)</h1>
+  <div class="small">
+    Self-hosted XLSX import • Category filter (Flower/Vape/Concentrate) • Product search • Sort: Total Terpenes → BetaCaryphyllene
+  </div>
+
   <div id="jsStatus" class="status checking">JS status: (checking…)</div>
 
+  <div class="controls">
+    <div class="ctrl">
+      <label for="fileInput">Upload XLSX</label>
+      <input id="fileInput" type="file" accept=".xlsx,.xls" />
+      <div class="small muted">Use the Dutchie export as-is.</div>
+    </div>
+
+    <div class="ctrl">
+      <label for="categorySelect">Category</label>
+      <select id="categorySelect" aria-label="Category filter"></select>
+    </div>
+
+    <div class="ctrl">
+      <label for="searchInput">Search (Product)</label>
+      <input id="searchInput" type="text" placeholder="e.g. Anthos, 2.83g, Live Resin…" />
+    </div>
+  </div>
+
+  <div class="wrap">
+    <table id="tbl">
+      <thead><tr id="hdrRow"></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- ✅ Self-hosted SheetJS -->
+  <script src="./vendor/xlsx.full.min.js"></script>
+
   <script>
-    // If this runs, the label flips immediately.
-    document.addEventListener("DOMContentLoaded", () => {
-      const el = document.getElementById("jsStatus");
-      el.textContent = "JS status: RUNNING ✅";
-      el.classList.remove("checking");
-      el.classList.add("running");
-    });
-  </script>
-</body>
-</html>
+  document.addEventListener("DOMContentLoaded", function () {
+    var statusEl = document.getElementById("jsStatus");
+    var fileInput = document.getElementById("fileInput");
+    var categorySelect = document.getElementById("categorySelect");
+    var searchInput = document.getElementById("searchInput");
+
+    function setStatus(cls, msg) {
+      statusEl.className = "status " + cls;
+      statusEl.textContent = msg;
+    }
+
+    // Prove JS ran
+    setStatus("running", "JS status: RUNNING (ready for XLSX)");
+
+    // Sanity-check that XLSX library is present
+    if (typeof XLSX === "undefined") {
+      setStatus("error", "JS ERROR: XLSX library not loaded. Check /vendor/xlsx.full.min.js");
+      return;
+    }
+
+    // Canonical terp order (desktop TTTT order)
+    var TERP_COLS = [
+      "BetaCaryphyllene","Limonene","Linalool","BetaMyrcene","Humulene","Terpinolene","BetaPinene","AlphaPinene",
+      "ThreeCarene","AlphaTerpinene","BetaEudesmol","Bisabolol","Camphene","Eucalyptol","Geraniol","Guaiol",
+      "Isopulegol","Nerolidol","NerolidolTwo","Ocimene","OcimeneOne","OcimeneTwo","pCymene","pIsopropyltouluene",
+      "Terpinene","TransNerolidol"
+    ];
+
+    // Display columns
+    var BASE_COLS = [
+      { key: "Product",        label: "Product",        type: "txt" },
+      { key: "Location",       label: "Location",       type: "txt" },
+      { key: "Product Type",   label: "Category",       type: "txt" },
+      { key: "Room",           label: "Room",           type: "txt" },
+      { key: "THC",            label: "THC",            type: "num_pct" },
+      { key: "Total Terpenes", label: "Total Terpenes", type: "num_pct" }
+    ];
+
+    // Always show these categories (no ALL), default Flower
+    var UI_CATEGORIES = ["Flower","Vape","Concentrate"];
+
+    // Data state (normalized rows from XLSX)
+    var allRows = [];
+
+    function safeStr(x) { return (x == null) ? "" : String(x); }
+
+    function normalizePercent(val) {
+      // "22.9 %" -> 22.9
+      // "666.0 mg/g" -> 66.6
+      // "" -> 0
+      if (val == null) return 0;
+      var s = String(val).trim();
+      if (!s) return 0;
+      s = s.replace(/,/g, "");
+
+      if (/mg\/g/i.test(s)) {
+        var n1 = parseFloat(s);
+        return isFinite(n1) ? (n1 / 10) : 0; // mg/g ÷ 10 = %
+      }
+      if (/%/.test(s)) {
+        var n2 = parseFloat(s);
+        return isFinite(n2) ? n2 : 0;
+      }
+      var n3 = parseFloat(s);
+      return isFinite(n3) ? n3 : 0;
+    }
+
+    function fmtPct(num) {
+      var n = Number(num) || 0;
+      if (n === 0) return "";
+      return n.toFixed(2) + "%";
+    }
+
+    function mapToUiCategory(rawCat) {
+      var c = String(rawCat || "").toLowerCase();
+
+      if (c === "flower") return "Flower";
+

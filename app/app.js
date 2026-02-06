@@ -262,21 +262,28 @@
 
   function onFileChange(evt) {
     var file = evt.target.files && evt.target.files[0];
+    console.log("onFileChange fired ✅");
+console.log("File:", file ? file.name : "(none)", "size:", file ? file.size : "(n/a)");
+    
     if (!file) return;
 
     setStatus("running", "JS status: RUNNING ✅ (reading XLSX...)");
 
     var reader = new FileReader();
     reader.onload = function (e) {
+      console.log("FileReader onload ✅ bytes:", e.target.result.byteLength);
       try {
         var bytes = new Uint8Array(e.target.result);
         var wb = XLSX.read(bytes, { type: "array" });
-
+console.log("Workbook sheets:", wb.SheetNames);
         var sheetName = pickFirstNonEmptySheet(wb);
+        console.log("Selected sheet:", sheetName);
         var ws = wb.Sheets[sheetName];
 
         var rawRows = XLSX.utils.sheet_to_json(ws, { defval: "" });
-
+console.log("RAW ROWS:", rawRows.length);
+console.log("FIRST ROW:", rawRows[0] || "(none)");
+console.log("FIRST ROW KEYS:", rawRows[0] ? Object.keys(rawRows[0]) : "(none)");
         var normalized = [];
         for (var i = 0; i < rawRows.length; i++) {
           var n = normalizeRow(rawRows[i]);
@@ -284,7 +291,7 @@
         }
 
         allRows = normalized;
-
+console.log("NORMALIZED ROWS:", allRows.length);
         // Reset UI controls
         categorySelect.value = "Flower";
         searchInput.value = "";

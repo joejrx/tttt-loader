@@ -337,6 +337,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   fileInput.addEventListener("change", function (evt) {
+    console.log("FILE PICKED:", evt.target.files[0]?.name);
     var file = evt.target.files && evt.target.files[0];
     if (!file) return;
 

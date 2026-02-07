@@ -280,8 +280,36 @@ console.log("Workbook sheets:", wb.SheetNames);
         console.log("Selected sheet:", sheetName);
         var ws = wb.Sheets[sheetName];
 
-        var rawRows = XLSX.utils.sheet_to_json(ws, { defval: "" });
-console.log("RAW ROWS:", rawRows.length);
+// --- Auto-detect the header row (Dutchie exports often have title rows) ---
+var aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }); // array-of-arrays
+var headerRow = -1;
+
+function normCell(x) { return String(x || "").trim().toLowerCase(); }
+
+for (var r = 0; r < Math.min(aoa.length, 50); r++) {
+  var row = aoa[r].map(normCell);
+
+  var hasProduct = row.indexOf("product") >= 0;
+  var hasLocation = row.indexOf("location") >= 0;
+  var hasRoom = row.indexOf("room") >= 0;
+  var hasCategory = row.indexOf("category") >= 0 || row.indexOf("product type") >= 0;
+
+  if (hasProduct && (hasLocation || hasRoom || hasCategory)) {
+    headerRow = r;
+    break;
+  }
+}
+
+if (headerRow === -1) {
+  console.log("Header row not found. First 10 rows:", aoa.slice(0, 10));
+  setStatus("error", "JS ERROR: Could not find header row (Product/Location/Category) in first 50 rows.");
+  return;
+}
+
+// Parse again starting at the header row so keys become real column names
+var rawRows = XLSX.utils.sheet_to_json(ws, { defval: "", range: headerRow });
+console.log("Detected header row:", headerRow, "RAW ROWS:", rawRows.length);
+console.log("FIRST ROW KEYS:", rawRows[0] ? Object.keys(rawRows[0]) : "(none)");console.log("RAW ROWS:", rawRows.length);
 console.log("FIRST ROW:", rawRows[0] || "(none)");
 console.log("FIRST ROW KEYS:", rawRows[0] ? Object.keys(rawRows[0]) : "(none)");
         var normalized = [];

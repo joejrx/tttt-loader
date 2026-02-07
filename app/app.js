@@ -215,11 +215,10 @@
 
   function normalizeRow(raw) {
     // Handle header variants
-    var productKey = findColumn(raw, ["Product"]);
-    var locKey     = findColumn(raw, ["Location"]);
-    var roomKey    = findColumn(raw, ["Room"]);
-    var catKey     = findColumn(raw, ["Category", "Product Type", "ProductType"]);
-    var thcKey     = findColumn(raw, ["THC", "THC%","THC %"]);
+var productKey = findColumn(raw, ["Product", "Product Name", "Item", "Name"]);
+var catKey     = findColumn(raw, ["Category", "Category Name", "Product Type", "ProductType", "Type"]);
+var thcKey     = findColumn(raw, ["THC", "THC%","THC %", "Total THC", "Total THC %", "TotalTHC"]);
+``
 
     var product = productKey ? safeStr(raw[productKey]) : "";
     if (!product.trim()) return null;

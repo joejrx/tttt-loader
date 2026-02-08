@@ -33,6 +33,9 @@
   background: #f3f4f6;
   cursor: pointer;
   font-weight: 800;
+  th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { background: #e6e6e6; }
+.sort-ind { font-weight: 900; }
 }
 #btnClearSearch:hover { background: #e5e7eb; }
 #btnClearSearch:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -86,7 +89,7 @@
   </div>
 
   <!-- Load libraries/scripts as external files (no inline scripts) -->
-<script src="./vendor/xlsx.full.min.js?v=9014"></script>
-<script src="./app/app.js?v=9014" defer></script>
+<script src="./vendor/xlsx.full.min.js?v=9015"></script>
+<script src="./app/app.js?v=9015" defer></script>
 </body>
 </html>

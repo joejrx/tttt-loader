@@ -19,14 +19,14 @@
     .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin: 10px 0 10px; }
     .ctrl { display:flex; flex-direction:column; gap:6px; min-width: 220px; }
     label { font-weight: 700; }
-    input[type="file"], input[type="text"], select {
+   input[type="file"], input[type="text"], input[type="search"], select {
       padding: 8px 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 14px;
       background: #fff;
     }
-    input[type="text"] { width: 260px; }
+    input[type="text"], input[type="search"] { width: 260px; }
 
     .wrap { overflow-x:auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; min-width: 1600px; }
@@ -58,11 +58,13 @@
       <select id="categorySelect" aria-label="Category filter"></select>
     </div>
 
-    <div class="ctrl">
-      <label for="searchInput">Search (Product)</label>
-      <input id="searchInput" type="text" placeholder="e.g. Anthos, 2.83g, Live Resin…" />
-    </div>
+  <div class="ctrl">
+  <label for="searchInput">Search (Product)</label>
+  <div style="display:flex; gap:8px; align-items:center;">
+    <input id="searchInput" type="search" placeholder="e.g. Anthos, 2.83g, Live Resin…" />
+    <button id="btnClearSearch" type="button" title="Clear search" aria-label="Clear search">✕</button>
   </div>
+</div>
 
   <div class="wrap">
     <table id="tbl">

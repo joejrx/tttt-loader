@@ -213,28 +213,43 @@
     return null;
   }
 
-  function normalizeRow(raw) {
-    // Handle header variants
-var productKey = findColumn(raw, ["Product", "Product Name", "Item", "Name"]);
-var catKey     = findColumn(raw, ["Category", "Category Name", "Product Type", "ProductType", "Type"]);
-var thcKey     = findColumn(raw, ["THC", "THC%","THC %", "Total THC", "Total THC %", "TotalTHC"]);
-``
+ function normalizeRow(raw) {
+  // Handle header variants (case-insensitive match via findColumn)
+  var productKey = findColumn(raw, ["Product", "Product Name", "Name", "Item"]);
+  var locKey     = findColumn(raw, ["Location", "Store", "Dispensary"]);
+  var roomKey    = findColumn(raw, ["Room"]);
+  var catKey     = findColumn(raw, ["Category", "Category Name", "Product Type", "ProductType", "Type"]);
+  var thcKey     = findColumn(raw, ["THC", "THC%", "THC %", "Total THC", "Total THC %", "TotalTHC"]);
 
-    var product = productKey ? safeStr(raw[productKey]) : "";
-    if (!product.trim()) return null;
+  var product = productKey ? safeStr(raw[productKey]) : "";
+  if (!product.trim()) return null;
 
-    var rawCat = catKey ? raw[catKey] : "";
-    var uiCat = mapToUiCategory(rawCat);
-    if (!uiCat) return null;
+  var rawCat = catKey ? safeStr(raw[catKey]) : "";
+  var uiCat = mapToUiCategory(rawCat);
+  if (!uiCat) return null; // ignore Accessories/Edibles/etc for now
 
-    var row = {
-      "Product": product,
-      "Location": locKey ? safeStr(raw[locKey]) : "",
-      "Room": roomKey ? safeStr(raw[roomKey]) : "",
-      "Product Type": uiCat,
-      "THC": normalizePercent(thcKey ? raw[thcKey] : ""),
-      "Total Terpenes": 0
-    };
+  var row = {
+    "Product": product,
+    "Location": locKey ? safeStr(raw[locKey]) : "",
+    "Room": roomKey ? safeStr(raw[roomKey]) : "",
+    "Product Type": uiCat,
+    "THC": normalizePercent(thcKey ? raw[thcKey] : ""),
+    "Total Terpenes": 0
+  };
+
+  // Terps: normalize and compute total
+  var total = 0;
+  for (var t = 0; t < TERP_COLS.length; t++) {
+    var terpName = TERP_COLS[t];
+    var terpKey = findColumn(raw, [terpName]);
+    var v = normalizePercent(terpKey ? raw[terpKey] : "");
+    row[terpName] = v;
+    total += v;
+  }
+  row["Total Terpenes"] = Math.round(total * 100) / 100;
+
+  return row;
+}
 
     var total = 0;
     for (var t = 0; t < TERP_COLS.length; t++) {

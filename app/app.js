@@ -199,21 +199,21 @@
   }
 
   // -------------------------
-  // XLSX parsing helpers
-  // -------------------------
-  function findColumn(obj, candidates) {
-    // returns first matching key present in obj (case-insensitive)
-    var keys = Object.keys(obj || {});
-    for (var c = 0; c < candidates.length; c++) {
-      var want = candidates[c].toLowerCase();
-      for (var k = 0; k < keys.length; k++) {
-        if (keys[k].toLowerCase() === want) return keys[k];
-      }
+// XLSX parsing helpers
+// -------------------------
+function findColumn(obj, candidates) {
+  // returns first matching key present in obj (case-insensitive)
+  var keys = Object.keys(obj || {});
+  for (var c = 0; c < candidates.length; c++) {
+    var want = String(candidates[c]).toLowerCase();
+    for (var k = 0; k < keys.length; k++) {
+      if (String(keys[k]).toLowerCase() === want) return keys[k];
     }
-    return null;
   }
+  return null;
+}
 
- function normalizeRow(raw) {
+function normalizeRow(raw) {
   // Handle header variants (case-insensitive match via findColumn)
   var productKey = findColumn(raw, ["Product", "Product Name", "Name", "Item"]);
   var locKey     = findColumn(raw, ["Location", "Store", "Dispensary"]);
@@ -246,24 +246,10 @@
     row[terpName] = v;
     total += v;
   }
-  row["Total Terpenes"] = Math.round(total * 100) / 100;
 
+  row["Total Terpenes"] = Math.round(total * 100) / 100;
   return row;
 }
-
-    var total = 0;
-    for (var t = 0; t < TERP_COLS.length; t++) {
-      var terpName = TERP_COLS[t];
-      var terpKey = findColumn(raw, [terpName]);
-      var v = normalizePercent(terpKey ? raw[terpKey] : "");
-      row[terpName] = v;
-      total += v;
-    }
-    row["Total Terpenes"] = Math.round(total * 100) / 100;
-
-    return row;
-  }
-
   function pickFirstNonEmptySheet(wb) {
     for (var i = 0; i < wb.SheetNames.length; i++) {
       var name = wb.SheetNames[i];

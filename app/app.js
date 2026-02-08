@@ -2,7 +2,7 @@
   // -------------------------
   // DOM references
   // -------------------------
-  var statusEl, fileInput, categorySelect, searchInput;
+  var statusEl, fileInput, categorySelect, searchInput, btnClearSearch
 
   function setStatus(cls, msg) {
     if (!statusEl) return;
@@ -347,6 +347,7 @@ console.log("NORMALIZED ROWS:", allRows.length);
     fileInput = document.getElementById("fileInput");
     categorySelect = document.getElementById("categorySelect");
     searchInput = document.getElementById("searchInput");
+    btnClearSearch = document.getElementById("btnClearSearch");
 
     // If HTML shell isn't present, do nothing
     if (!statusEl || !fileInput || !categorySelect || !searchInput) return;

@@ -363,6 +363,16 @@ console.log("NORMALIZED ROWS:", allRows.length);
     categorySelect.addEventListener("change", render);
     searchInput.addEventListener("input", onSearchInput);
     fileInput.addEventListener("change", onFileChange);
+    
+if (btnClearSearch) {
+  btnClearSearch.addEventListener("click", function (e) {
+    e.preventDefault();
+    searchInput.value = "";
+    searchInput.blur();   // optional for mobile (hides keyboard)
+    render();
+  });
+}
+
 
     setStatus("running", "JS status: RUNNING ✅ (ready for XLSX)");
     render();

@@ -1,0 +1,49 @@
+/* Shared Terp Tooltip + Info Icon Styles across all locations */
+
+/* Info icon inside terpene headers */
+.terp-info-btn {
+  border: none;
+  background: transparent;
+  color: var(--terp-info-color, #ffffff);  /* default white, override per brand if needed */
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+}
+
+.terp-info-btn:hover {
+  text-decoration: underline;
+}
+
+/* Tooltip container */
+.terpene-tooltip {
+  position: absolute;
+  max-width: 260px;
+  background: var(--terp-tooltip-bg, #111111);
+  color: var(--terp-tooltip-text, #ffffff);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.terpene-tooltip.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.terpene-tooltip-aroma {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.terpene-tooltip-research {
+  font-size: 0.75rem;
+  line-height: 1.3;
+}

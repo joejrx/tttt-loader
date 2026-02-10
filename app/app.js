@@ -22,6 +22,114 @@
     "Terpinene","TransNerolidol"
   ];
 
+  // Aroma + research notes for terpene header tooltips
+  var TERP_INFO = {
+    BetaCaryphyllene: {
+      aroma: "Spicy, peppery, clove-like.",
+      research: "Common in black pepper and cloves; being studied for potential anti-inflammatory effects and CB2 receptor activity."
+    },
+    Limonene: {
+      aroma: "Bright citrus (lemon, orange).",
+      research: "Found in citrus rinds; associated in research with uplifting mood and stress-supporting properties."
+    },
+    Linalool: {
+      aroma: "Floral, lavender-like.",
+      research: "Abundant in lavender; studied for potential calming and relaxing effects."
+    },
+    BetaMyrcene: {
+      aroma: "Earthy, musky, herbal.",
+      research: "Common in hops and mango; often associated with “heavy” or relaxing profiles in consumer reports."
+    },
+    Humulene: {
+      aroma: "Woody, hoppy, earthy.",
+      research: "Found in hops and coriander; being researched for potential anti-inflammatory and appetite-related effects."
+    },
+    Terpinolene: {
+      aroma: "Piney, herbal, floral.",
+      research: "Less common but distinctive; often linked with more uplifting or energetic profiles in user reports."
+    },
+    BetaPinene: {
+      aroma: "Sharp pine, resinous.",
+      research: "Present in pine needles; studied for potential alertness-supporting and bronchodilatory properties."
+    },
+    AlphaPinene: {
+      aroma: "Fresh pine, evergreen.",
+      research: "One of the most common terpenes in nature; research suggests possible support for focus and respiratory function."
+    },
+    ThreeCarene: {
+      aroma: "Sweet, cedar, woody.",
+      research: "Found in cedar and rosemary; sometimes associated with “dry” mouth/eyes in anecdotal reports."
+    },
+    AlphaTerpinene: {
+      aroma: "Citrus, herbal.",
+      research: "Less common; studied for antioxidant and aroma-modifying roles in plant essential oils."
+    },
+    BetaEudesmol: {
+      aroma: "Woody, earthy.",
+      research: "Seen in some wood-derived oils; research is early but looks at potential calming or sedative-like effects."
+    },
+    Bisabolol: {
+      aroma: "Sweet, floral, chamomile-like.",
+      research: "Major terpene in chamomile; being studied for potential soothing and skin-calming properties."
+    },
+    Camphene: {
+      aroma: "Sharp, herbal, fir-like.",
+      research: "Found in fir needles; early research explores potential cardiovascular and antioxidant roles."
+    },
+    Eucalyptol: {
+      aroma: "Minty, cool, eucalyptus-like.",
+      research: "Common in eucalyptus; studied for potential respiratory and cognitive clarity effects."
+    },
+    Geraniol: {
+      aroma: "Sweet, rose, floral.",
+      research: "Present in roses and geraniums; research looks at antioxidant and aroma-modifying properties."
+    },
+    Guaiol: {
+      aroma: "Woody, piney.",
+      research: "Found in guaiacum and conifers; less-studied but often grouped with woody, grounding aroma profiles."
+    },
+    Isopulegol: {
+      aroma: "Minty, herbal.",
+      research: "Related to menthol; being researched for potential calming and neuroprotective properties."
+    },
+    Nerolidol: {
+      aroma: "Woody, floral, green.",
+      research: "Found in jasmine and tea tree; studies focus on sedative-like and skin-penetration-enhancing properties."
+    },
+    NerolidolTwo: {
+      aroma: "Woody, floral (nerolidol isomer).",
+      research: "Isomer of nerolidol; similar research focus on potential sedative-like and terpene-carrying effects."
+    },
+    Ocimene: {
+      aroma: "Sweet, herbal, fresh.",
+      research: "Found in mint and basil; associated with bright, sweet aroma profiles."
+    },
+    OcimeneOne: {
+      aroma: "Sweet, herbal (ocimene isomer).",
+      research: "Isomer of ocimene; contributes to sweet, fresh aromatics in certain cultivars."
+    },
+    OcimeneTwo: {
+      aroma: "Sweet, green (ocimene isomer).",
+      research: "Another ocimene isomer; overall similar aromatic and research profile to ocimene."
+    },
+    pCymene: {
+      aroma: "Citrusy, slightly solvent-like.",
+      research: "Found in cumin and thyme; studied as a component of essential oils with potential antioxidant roles."
+    },
+    pIsopropyltouluene: {
+      aroma: "Sharp, solvent-like, minor note.",
+      research: "Less-characterized in cannabis; typically present at low levels and discussed mainly in analytical contexts."
+    },
+    Terpinene: {
+      aroma: "Citrus, herbal, turpentine-like.",
+      research: "Occurs in tea tree and cardamom; research looks at antioxidant and antimicrobial properties."
+    },
+    TransNerolidol: {
+      aroma: "Woody, floral (trans-nerolidol isomer).",
+      research: "Trans isomer of nerolidol; studied for similar potential calming and skin-penetration effects."
+    }
+  };
+
   // Base columns in the web table
   // type: "num" => numeric sorting (DESC default)
   // type: "txt" => text sorting (ASC default)
@@ -102,6 +210,110 @@
   }
 
   // -------------------------
+  // Terp header tooltip behavior
+  // -------------------------
+  function initTerpHeaderTooltips() {
+    var tooltipId = 'terpene-tooltip';
+
+    // Create tooltip element once if it isn't there yet
+    var tooltip = document.getElementById(tooltipId);
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.id = tooltipId;
+      tooltip.className = 'terpene-tooltip';
+      tooltip.setAttribute('aria-hidden', 'true');
+      tooltip.innerHTML =
+        '<div class="terpene-tooltip-content">' +
+          '<div class="terpene-tooltip-aroma"></div>' +
+          '<div class="terpene-tooltip-research"></div>' +
+        '</div>';
+      document.body.appendChild(tooltip);
+    }
+
+    var aromaEl = tooltip.querySelector('.terpene-tooltip-aroma');
+    var researchEl = tooltip.querySelector('.terpene-tooltip-research');
+    var currentTarget = null;
+
+    function getTerpInfo(terpKey) {
+      return TERP_INFO[terpKey] || {
+        aroma: "Aroma details not available.",
+        research: "Research notes not available for this terpene in this tool."
+      };
+    }
+
+    function showTooltipFor(btn) {
+      var terpKey = btn.getAttribute('data-terp') || '';
+      var info = getTerpInfo(terpKey);
+
+      aromaEl.textContent = info.aroma || '';
+      researchEl.textContent = info.research || '';
+
+      var rect = btn.getBoundingClientRect();
+      var scrollY = window.scrollY || window.pageYOffset;
+      var scrollX = window.scrollX || window.pageXOffset;
+
+      tooltip.style.top = (rect.bottom + scrollY + 6) + 'px';
+      tooltip.style.left = (rect.left + scrollX) + 'px';
+
+      tooltip.classList.add('visible');
+      tooltip.setAttribute('aria-hidden', 'false');
+      currentTarget = btn;
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove('visible');
+      tooltip.setAttribute('aria-hidden', 'true');
+      currentTarget = null;
+    }
+
+    // Bind to each terp info button in the header row
+    var infoButtons = document.querySelectorAll('#hdrRow .terp-info-btn');
+    infoButtons.forEach(function (btn) {
+      // CLICK / TAP: toggle tooltip — but DO NOT trigger header sorting
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();  // prevents click from reaching <th> and running onHeaderClick
+        if (currentTarget === btn) {
+          hideTooltip();
+        } else {
+          showTooltipFor(btn);
+        }
+      });
+
+      // Optional: desktop hover behavior
+      btn.addEventListener('mouseenter', function () {
+        if (window.matchMedia('(hover: hover)').matches) {
+          showTooltipFor(btn);
+        }
+      });
+      btn.addEventListener('mouseleave', function () {
+        if (window.matchMedia('(hover: hover)').matches) {
+          hideTooltip();
+        }
+      });
+    });
+
+    // Only bind global close/reposition once
+    if (!window.__terpTooltipGlobalsBound) {
+      window.__terpTooltipGlobalsBound = true;
+
+      // Click anywhere outside closes the tooltip
+      document.body.addEventListener('click', function (e) {
+        if (!tooltip.contains(e.target)) {
+          hideTooltip();
+        }
+      });
+
+      // Keep tooltip near the button as user scrolls/resizes
+      window.addEventListener('scroll', function () {
+        if (currentTarget) showTooltipFor(currentTarget);
+      });
+      window.addEventListener('resize', function () {
+        if (currentTarget) showTooltipFor(currentTarget);
+      });
+    }
+  }
+
+  // -------------------------
   // Header building + sort indicators
   // -------------------------
   function buildHeader() {
@@ -114,17 +326,31 @@
     for (var i = 0; i < BASE_COLS.length; i++) {
       var c = BASE_COLS[i];
       var cls = (c.type === "num") ? "num sortable" : "txt sortable";
-      html += '<th class="' + cls + '" data-key="' + c.key + '">' + c.label + '<span class="sort-ind"></span></th>';
+      html += '<th class="' + cls + '" data-key="' + c.key + '">' +
+                c.label +
+                '<span class="sort-ind"></span>' +
+              '</th>';
     }
 
-    // Terp columns
+    // Terp columns with info icons
     for (var t = 0; t < TERP_COLS.length; t++) {
       var key = TERP_COLS[t];
-      html += '<th class="num sortable" data-key="' + key + '">' + key + '<span class="sort-ind"></span></th>';
+      html +=
+        '<th class="num sortable" data-key="' + key + '">' +
+          '<span class="terp-header-text">' + key + '</span>' +
+          '<button ' +
+            'type="button" ' +
+            'class="terp-info-btn" ' +
+            'aria-label="' + key + ' – aroma & research info" ' +
+            'data-terp="' + key + '"' +
+          '>ⓘ</button>' +
+          '<span class="sort-ind"></span>' +
+        '</th>';
     }
 
     hdr.innerHTML = html;
     updateSortIndicators();
+    initTerpHeaderTooltips();   // bind tooltip behavior once headers are in the DOM
   }
 
   function updateSortIndicators() {

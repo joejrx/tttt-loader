@@ -1,68 +1,129 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TTTT Loader – Harrison</title>
-  
-<!-- Shared tooltip + terp info styles for all locations -->
+  <title>TTTT Loader – Harrison (QCC)</title>
+
+  <!-- Shared tooltip styles -->
   <link rel="stylesheet" href="../app/tttt-shared.css?v=9016" />
 
-
   <style>
-    body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.45; }
-    .small { color:#555; margin: 6px 0 12px; }
+    :root {
+      /* QCC Brand Colors (from queenccanna.com) */
+      --color-primary:        #7A1FA2;   /* header purple */
+      --color-primary-dark:   #5E1780;
+      --color-accent:         #F59B02;   /* CTA orange */
+      --color-accent-light:   #FBBF24;
+      --color-background:     #FFFFFF;
+      --color-card-bg:        #FFFFFF;
+      --color-text-primary:   #1F1B24;
+      --color-text-secondary: #6B6472;
+
+      /* Tooltip brand */
+      --terp-info-color:      #ffffff;
+      --terp-tooltip-bg:      #4B1065;
+      --terp-tooltip-text:    #ffffff;
+    }
+
+    body { 
+      font-family: Arial, sans-serif; 
+      padding: 40px; 
+      line-height: 1.45;
+      background: var(--color-background);
+      color: var(--color-text-primary);
+    }
+
+    h1 {
+      margin-top: 0;
+      margin-bottom: 6px;
+      color: var(--color-primary);
+    }
+
+    .small { 
+      color: var(--color-text-secondary); 
+      margin: 6px 0 12px; 
+    }
+
     .status {
-      display:inline-block; padding:10px 12px; border-radius:8px; margin: 10px 0 14px;
+      display: inline-block; 
+      padding: 10px 12px; 
+      border-radius: 8px; 
+      margin: 10px 0 14px;
       font-weight: 800;
     }
-    .checking { background:#ffeeba; color:#7a5a00; }
-    .running  { background:#d4edda; color:#155724; }
-    .error    { background:#f8d7da; color:#721c24; }
 
-    .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin: 10px 0 10px; }
-    .ctrl { display:flex; flex-direction:column; gap:6px; min-width: 220px; }
+    .checking { background: #ffeeba; color: #7a5a00; }
+    .running  { background: #d4edda; color: #155724; }
+    .error    { background: #f8d7da; color: #721c24; }
+
+    .controls { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 12px; 
+      align-items: flex-end; 
+      margin: 10px 0 10px; 
+    }
+
+    .ctrl { display: flex; flex-direction: column; gap: 6px; min-width: 220px; }
     label { font-weight: 700; }
+
     input[type="file"], input[type="text"], input[type="search"], select {
       padding: 8px 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 14px;
       background: #fff;
+      color: var(--color-text-primary);
     }
-    input[type="text"], input[type="search"] { width: 260px; }
 
     #btnClearSearch {
       padding: 8px 10px;
       border-radius: 8px;
-      border: 1px solid #ccc;
-      background: #f3f4f6;
+      border: 2px solid var(--color-accent);
+      background: var(--color-accent);
       cursor: pointer;
       font-weight: 800;
+      color: #ffffff;
     }
-    #btnClearSearch:hover { background: #e5e7eb; }
+
+    #btnClearSearch:hover { background: var(--color-accent-light); }
     #btnClearSearch:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    .wrap { overflow-x:auto; -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; min-width: 1600px; }
-    th, td { border: 1px solid #ccc; padding: 8px 10px; vertical-align: top; }
-    th { background:#efefef; position: sticky; top: 0; z-index: 2; }
-    th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    th.txt, td.txt { text-align: left; }
+    .wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 10px; }
+
+    table {
+      width: 100%; border-collapse: collapse; min-width: 1600px; background: var(--color-card-bg);
+    }
+
+    th, td {
+      border: 1px solid #ccc; 
+      padding: 8px 10px; 
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--color-primary);
+      color: #ffffff;
+      position: sticky; top: 0; z-index: 2;
+    }
 
     th.sortable { cursor: pointer; user-select: none; }
-    th.sortable:hover { background: #e6e6e6; }
+    th.sortable:hover { background: var(--color-primary-dark); }
+
+    th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    th.txt, td.txt { text-align: left; }
     .sort-ind { font-weight: 900; }
 
-    .muted { color:#777; }
+    .muted { color: var(--color-text-secondary); }
   </style>
 </head>
 
 <body>
-  <h1>TTTT Loader – Harrison</h1>
+  <h1>TTTT Loader – Harrison (QCC)</h1>
+
   <div class="small">
-    Self-hosted XLSX import • Category filter (Flower/Vape/Concentrate) • Product search • Sortable columns
+    Self-hosted XLSX import • Category filter • Product search • Sortable columns
   </div>
 
   <div id="jsStatus" class="status checking">JS status: (checking…)</div>
@@ -83,7 +144,7 @@
       <label for="searchInput">Search (Product)</label>
       <div style="display:flex; gap:8px; align-items:center;">
         <input id="searchInput" type="search" placeholder="e.g. Anthos, 2.83g, Live Resin…" />
-        <button id="btnClearSearch" type="button" title="Clear search" aria-label="Clear search">✕</button>
+        <button id="btnClearSearch" type="button" aria-label="Clear search">✕</button>
       </div>
     </div>
   </div>
@@ -95,9 +156,7 @@
     </table>
   </div>
 
-  <!-- NOTE: paths are ../ because we are inside /cfalls/ -->
   <script src="../vendor/xlsx.full.min.js?v=9016"></script>
   <script src="../app/app.js?v=9016" defer></script>
 </body>
 </html>
-``

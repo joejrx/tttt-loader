@@ -3,6 +3,7 @@
   // DOM references
   // -------------------------
   var statusEl, fileInput, categorySelect, searchInput, btnClearSearch;
+  var btnLoadMore;              // NEW: Load More button reference
 
   function setStatus(cls, msg) {
     if (!statusEl) return;
@@ -148,6 +149,11 @@
   // Data state
   var allRows = [];
   var lastRawRowCount = 0;
+
+  // NEW: pagination state
+  var filteredRows = [];
+  var rowsPerPage = 10;
+  var rowsShown = 0;
 
   // Sorting state
   var sortKey = null;   // active key (or null = default sort)
@@ -412,7 +418,64 @@
   }
 
   // -------------------------
-  // Render: category + search + sorting
+  // Render helpers for pagination
+  // -------------------------
+
+  // NEW: Build one row's HTML string (base + terp cells)
+  function buildRowHtml(row) {
+    var baseCells = "";
+    for (var bc = 0; bc < BASE_COLS.length; bc++) {
+      var col = BASE_COLS[bc];
+      if (col.type === "txt") {
+        baseCells += '<td class="txt">' + safeStr(row[col.key]) + "</td>";
+      } else {
+        baseCells += '<td class="num">' + fmtPct(row[col.key]) + "</td>";
+      }
+    }
+
+    var terpCells = "";
+    for (var t = 0; t < TERP_COLS.length; t++) {
+      var k = TERP_COLS[t];
+      terpCells += '<td class="num">' + fmtPct(row[k]) + "</td>";
+    }
+
+    return baseCells + terpCells;
+  }
+
+  // NEW: render the next batch of rows (for Load More)
+  function renderNextBatch() {
+    var tbody = document.querySelector("#tbl tbody");
+    if (!tbody || !filteredRows || filteredRows.length === 0) {
+      updateLoadMoreVisibility();
+      return;
+    }
+
+    var start = rowsShown;
+    var end = Math.min(rowsShown + rowsPerPage, filteredRows.length);
+
+    for (var i = start; i < end; i++) {
+      var row = filteredRows[i];
+      var tr = document.createElement("tr");
+      tr.innerHTML = buildRowHtml(row);
+      tbody.appendChild(tr);
+    }
+
+    rowsShown = end;
+    updateLoadMoreVisibility();
+  }
+
+  // NEW: show/hide Load More button
+  function updateLoadMoreVisibility() {
+    if (!btnLoadMore) return;
+    if (!filteredRows || rowsShown >= filteredRows.length) {
+      btnLoadMore.style.display = "none";
+    } else {
+      btnLoadMore.style.display = "inline-block";
+    }
+  }
+
+  // -------------------------
+  // Render: category + search + sorting (now paginated)
   // -------------------------
   function render() {
     var selectedCat = categorySelect.value;
@@ -438,35 +501,17 @@
       filtered.sort(defaultComparator);
     }
 
+    // NEW: store filtered rows, reset pagination, clear tbody, then render first batch
+    filteredRows = filtered;
+    rowsShown = 0;
+
     var tbody = document.querySelector("#tbl tbody");
     tbody.innerHTML = "";
 
-    for (var i = 0; i < filtered.length; i++) {
-      var row = filtered[i];
-
-      var baseCells = "";
-      for (var bc = 0; bc < BASE_COLS.length; bc++) {
-        var col = BASE_COLS[bc];
-        if (col.type === "txt") {
-          baseCells += '<td class="txt">' + safeStr(row[col.key]) + "</td>";
-        } else {
-          baseCells += '<td class="num">' + fmtPct(row[col.key]) + "</td>";
-        }
-      }
-
-      var terpCells = "";
-      for (var t = 0; t < TERP_COLS.length; t++) {
-        var k = TERP_COLS[t];
-        terpCells += '<td class="num">' + fmtPct(row[k]) + "</td>";
-      }
-
-      var tr = document.createElement("tr");
-      tr.innerHTML = baseCells + terpCells;
-      tbody.appendChild(tr);
-    }
+    renderNextBatch();  // first 10 rows
 
     var msg = "JS status: RUNNING ✅ (raw: " + lastRawRowCount + " • included: " + allRows.length +
-              " • showing: " + selectedCat + " • rows: " + filtered.length;
+              " • showing: " + selectedCat + " • rows: " + filteredRows.length;
     if (q) msg += ' • search: "' + q + '"';
     msg += ")";
     setStatus("running", msg);
@@ -649,6 +694,7 @@
     categorySelect = document.getElementById("categorySelect");
     searchInput = document.getElementById("searchInput");
     btnClearSearch = document.getElementById("btnClearSearch");
+    btnLoadMore   = document.getElementById("btnLoadMore");   // NEW
 
     if (!statusEl || !fileInput || !categorySelect || !searchInput) return;
 
@@ -671,6 +717,14 @@
     if (btnClearSearch) {
       btnClearSearch.addEventListener("click", onClearSearch);
       btnClearSearch.disabled = true;
+    }
+
+    // NEW: Load More button
+    if (btnLoadMore) {
+      btnLoadMore.addEventListener("click", function () {
+        renderNextBatch();
+      });
+      btnLoadMore.style.display = "none"; // hidden until we have data
     }
 
     setStatus("running", "JS status: RUNNING ✅ (ready for XLSX)");

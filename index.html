@@ -82,17 +82,21 @@ th.sortable:hover { background: #e6e6e6; }
 </div>
 
  <div class="tttt-table-wrapper">
-  <table id="ttttTable">
-    <thead>
-      <tr id="hdrRow">
-        <!-- all your <th>... -->
-      </tr>
-    </thead>
-    <tbody>
-      <!-- rows -->
-    </tbody>
-  </table>
+ <table id="ttttTable">
+  <thead>
+    <tr id="hdrRow">
+      <!-- your header ths -->
+    </tr>
+  </thead>
+  <tbody id="ttttBody">
+    <!-- JS-generated rows go here -->
+  </tbody>
+</table>
+
+<div id="ttttPagination" class="tttt-pagination">
+  <button id="ttttLoadMoreBtn" class="tttt-load-more-btn">Load More</button>
 </div>
+``
 
   <!-- Load libraries/scripts as external files (no inline scripts) -->
 <script src="./vendor/xlsx.full.min.js?v=9015"></script>

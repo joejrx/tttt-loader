@@ -50,9 +50,9 @@
 /* Sticky header for the main terp/product table across all locations */
 #hdrRow th {
   position: sticky;
-  top: 0;                 /* if you ever add a fixed top bar, set this to its height */
-  background: #ffffff;    /* so rows don't show through behind the header */
-  z-index: 10;            /* above body cells */
+  top: 0;
+  z-index: 10;
+  border-bottom: 2px solid #ccc;
 }
 
 /* Optional: give the header a nice bottom border */

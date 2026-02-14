@@ -152,7 +152,7 @@
 
   // NEW: pagination state
   var filteredRows = [];
-  var rowsPerPage = 5;
+  var rowsPerPage = 10;
   var rowsShown = 0;
 
   // Sorting state
@@ -465,16 +465,14 @@
   }
 
   // NEW: show/hide Load More button
-function updateLoadMoreVisibility() {
-  if (!btnLoadMore) return;
-
-  // If there is no filtered data or we've shown everything, hide it
-  if (!filteredRows || filteredRows.length === 0 || rowsShown >= filteredRows.length) {
-    btnLoadMore.style.display = "none";
-  } else {
-    btnLoadMore.style.display = "inline-block";
+  function updateLoadMoreVisibility() {
+    if (!btnLoadMore) return;
+    if (!filteredRows || rowsShown >= filteredRows.length) {
+      btnLoadMore.style.display = "none";
+    } else {
+      btnLoadMore.style.display = "inline-block";
+    }
   }
-}
 
   // -------------------------
   // Render: category + search + sorting (now paginated)
@@ -722,21 +720,17 @@ function updateLoadMoreVisibility() {
     }
 
     // NEW: Load More button
-   if (btnLoadMore) {
-  btnLoadMore.addEventListener("click", function () {
-    renderNextBatch();
-  });
-  // Let render/updateLoadMoreVisibility decide visibility
-}
+    if (btnLoadMore) {
+      btnLoadMore.addEventListener("click", function () {
+        renderNextBatch();
+      });
+      btnLoadMore.style.display = "none"; // hidden until we have data
     }
 
     setStatus("running", "JS status: RUNNING ✅ (ready for XLSX)");
     render();
   }
 
- if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 })();

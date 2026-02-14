@@ -152,7 +152,7 @@
 
   // NEW: pagination state
   var filteredRows = [];
-  var rowsPerPage = 10;
+  var rowsPerPage = 5;
   var rowsShown = 0;
 
   // Sorting state

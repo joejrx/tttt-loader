@@ -465,14 +465,16 @@
   }
 
   // NEW: show/hide Load More button
-  function updateLoadMoreVisibility() {
-    if (!btnLoadMore) return;
-    if (!filteredRows || rowsShown >= filteredRows.length) {
-      btnLoadMore.style.display = "none";
-    } else {
-      btnLoadMore.style.display = "inline-block";
-    }
+function updateLoadMoreVisibility() {
+  if (!btnLoadMore) return;
+
+  // If there is no filtered data or we've shown everything, hide it
+  if (!filteredRows || filteredRows.length === 0 || rowsShown >= filteredRows.length) {
+    btnLoadMore.style.display = "none";
+  } else {
+    btnLoadMore.style.display = "inline-block";
   }
+}
 
   // -------------------------
   // Render: category + search + sorting (now paginated)

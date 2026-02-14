@@ -19,34 +19,39 @@
     .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin: 10px 0 10px; }
     .ctrl { display:flex; flex-direction:column; gap:6px; min-width: 220px; }
     label { font-weight: 700; }
-   input[type="file"], input[type="text"], input[type="search"], select {
+
+    input[type="file"], input[type="text"], input[type="search"], select {
       padding: 8px 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 14px;
       background: #fff;
-     
-#btnClearSearch {
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  background: #f3f4f6;
-  cursor: pointer;
-  font-weight: 800;
-  th.sortable { cursor: pointer; user-select: none; }
-th.sortable:hover { background: #e6e6e6; }
-.sort-ind { font-weight: 900; }
-}
-#btnClearSearch:hover { background: #e5e7eb; }
-#btnClearSearch:disabled { opacity: 0.4; cursor: not-allowed; }
-
     }
+
+    #btnClearSearch {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #f3f4f6;
+      cursor: pointer;
+      font-weight: 800;
+    }
+    #btnClearSearch:hover { background: #e5e7eb; }
+    #btnClearSearch:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { background: #e6e6e6; }
+    .sort-ind { font-weight: 900; }
+
     input[type="text"], input[type="search"] { width: 260px; }
 
     .wrap { overflow-x:auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; min-width: 1600px; }
     th, td { border: 1px solid #ccc; padding: 8px 10px; vertical-align: top; }
+
+    /* global sticky header (optional) */
     th { background:#efefef; position: sticky; top: 0; z-index: 2; }
+
     th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
     th.txt, td.txt { text-align: left; }
     .muted { color:#777; }
@@ -73,36 +78,36 @@ th.sortable:hover { background: #e6e6e6; }
       <select id="categorySelect" aria-label="Category filter"></select>
     </div>
 
-  <div class="ctrl">
-  <label for="searchInput">Search (Product)</label>
-  <div style="display:flex; gap:8px; align-items:center;">
-    <input id="searchInput" type="search" placeholder="e.g. Anthos, 2.83g, Live Resin…" />
-    <button id="btnClearSearch" type="button" title="Clear search" aria-label="Clear search">✕</button>
+    <div class="ctrl">
+      <label for="searchInput">Search (Product)</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="searchInput" type="search" placeholder="e.g. Anthos, 2.83g, Live Resin…" />
+        <button id="btnClearSearch" type="button" title="Clear search" aria-label="Clear search">✕</button>
+      </div>
+    </div>
+  </div> <!-- end .controls -->
+
+  <div class="wrap">
+    <div class="tttt-table-wrapper">
+      <table id="tbl">
+        <thead>
+          <tr id="hdrRow">
+            <!-- header cells built by JS -->
+          </tr>
+        </thead>
+        <tbody>
+          <!-- JS-generated rows go here -->
+        </tbody>
+      </table>
+
+      <div id="paginationArea" style="text-align:center; margin-top: 0.75rem;">
+        <button id="btnLoadMore">Load More</button>
+      </div>
+    </div>
   </div>
-</div>
 
- <div class="tttt-table-wrapper">
- <table id="ttttTable">
-  <thead>
-    <tr id="hdrRow">
-      <!-- your header ths -->
-    </tr>
-  </thead>
-  <tbody id="ttttBody">
-    <!-- JS-generated rows go here -->
-  </tbody>
-</table>
-   <div id="paginationArea" style="text-align:center; margin-top: 0.75rem;">
-  <button id="btnLoadMore">Load More</button>
-</div>
-
-<div id="ttttPagination" class="tttt-pagination">
-  <button id="ttttLoadMoreBtn" class="tttt-load-more-btn">Load More</button>
-</div>
-``
-
-  <!-- Load libraries/scripts as external files (no inline scripts) -->
-<script src="./vendor/xlsx.full.min.js?v=9015"></script>
-<script src="./app/app.js?v=9015" defer></script>
+  <!-- Load libraries/scripts as external files -->
+  <script src="./vendor/xlsx.full.min.js?v=9015"></script>
+  <script src="./app/app.js?v=9015" defer></script>
 </body>
 </html>

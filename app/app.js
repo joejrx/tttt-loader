@@ -720,11 +720,12 @@
     }
 
     // NEW: Load More button
-    if (btnLoadMore) {
-      btnLoadMore.addEventListener("click", function () {
-        renderNextBatch();
-      });
-      btnLoadMore.style.display = "none"; // hidden until we have data
+   if (btnLoadMore) {
+  btnLoadMore.addEventListener("click", function () {
+    renderNextBatch();
+  });
+  // Let render/updateLoadMoreVisibility decide visibility
+}
     }
 
     setStatus("running", "JS status: RUNNING ✅ (ready for XLSX)");

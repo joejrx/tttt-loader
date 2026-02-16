@@ -542,7 +542,7 @@ function showMobileDetails(row) {
     var tbody = document.querySelector("#tbl tbody");
     tbody.innerHTML = "";
 
-    renderNextBatch();  // first 10 rows
+   
 
     var msg = "JS status: RUNNING ✅ (raw: " + lastRawRowCount + " • included: " + allRows.length +
               " • showing: " + selectedCat + " • rows: " + filteredRows.length;
@@ -756,7 +756,7 @@ function showMobileDetails(row) {
     // NEW: Load More button
     if (btnLoadMore) {
       btnLoadMore.addEventListener("click", function () {
-        renderNextBatch();
+        
       });
       btnLoadMore.style.display = "none"; // hidden until we have data
     }

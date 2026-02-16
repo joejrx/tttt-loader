@@ -468,40 +468,41 @@
       filtered.sort(defaultComparator);
     }
 
-    var tbody = document.querySelector("#tbl tbody");
-    tbody.innerHTML = "";
+var tbody = document.querySelector("#tbl tbody");
+tbody.innerHTML = "";
 
-    for (var i = 0; i < filtered.length; i++) {
-      (function(row) {
-        var baseCells = "";
-        for (var bc = 0; bc < BASE_COLS.length; bc++) {
-          var col = BASE_COLS[bc];
-          if (col.type === "txt") {
-            baseCells += '<td class="txt">' + safeStr(row[col.key]) + "</td>";
-          } else {
-            baseCells += '<td class="num">' + fmtPct(row[col.key]) + "</td>";
-          }
-        }
-
-        var terpCells = "";
-        for (var t = 0; t < TERP_COLS.length; t++) {
-          var k = TERP_COLS[t];
-          terpCells += '<td class="num">' + fmtPct(row[k]) + "</td>";
-        }
-
-        var tr = document.createElement("tr");
-        tr.innerHTML = baseCells + terpCells;
-
-        // Mobile-only: tap row to show full terp details
-        tr.addEventListener("click", function () {
-          if (window.innerWidth <= 768) {
-            showMobileDetails(row);
-          }
-        });
-
-        tbody.appendChild(tr);
-      })(filtered[i]);
+for (var i = 0; i < filtered.length; i++) {
+  (function(row) {
+    var baseCells = "";
+    for (var bc = 0; bc < BASE_COLS.length; bc++) {
+      var col = BASE_COLS[bc];
+      if (col.type === "txt") {
+        baseCells += '<td class="txt">' + safeStr(row[col.key]) + "</td>";
+      } else {
+        baseCells += '<td class="num">' + fmtPct(row[col.key]) + "</td>";
+      }
     }
+
+    var terpCells = "";
+    for (var t = 0; t < TERP_COLS.length; t++) {
+      var k = TERP_COLS[t];
+      terpCells += '<td class="num">' + fmtPct(row[k]) + "</td>";
+    }
+
+    var tr = document.createElement("tr");
+    tr.innerHTML = baseCells + terpCells;
+
+    // 👉 This is the Step 2 “mobile behavior” addition:
+    tr.addEventListener("click", function () {
+      if (window.innerWidth <= 768) {
+        showMobileDetails(row);
+      }
+    });
+
+    tbody.appendChild(tr);
+  })(filtered[i]);
+}
+
 
     var msg = "JS status: RUNNING ✅ (raw: " + lastRawRowCount + " • included: " + allRows.length +
               " • showing: " + selectedCat + " • rows: " + filtered.length;

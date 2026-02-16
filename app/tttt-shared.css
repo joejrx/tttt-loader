@@ -62,3 +62,37 @@
   overflow-y: auto;
   position: relative;
 }
+/* =====================================================
+   BRAND THEMES — SANDBOX ONLY
+   ===================================================== */
+
+/* --------------------------
+   FRX (Cuyahoga Falls, East Liverpool, Elyria)
+   Clinical, clean, cool tones
+--------------------------- */
+.brand-frx {
+  --brand-bg: #ffffff;
+  --brand-accent: #1f6f8b;      /* FRX blue/teal */
+  --brand-header-bg: #e7f3f8;   /* light clinical blue */
+  --brand-header-text: #08475e; 
+  --brand-border: #c4e1eb;
+}
+
+/* Apply FRX colors to the table header */
+.brand-frx #hdrRow th {
+  background: var(--brand-header-bg) !important;
+  color: var(--brand-header-text) !important;
+  border-bottom: 2px solid var(--brand-border) !important;
+}
+
+/* Apply FRX style to status bar */
+.brand-frx #jsStatus.running {
+  background: var(--brand-accent) !important;
+  color: #fff !important;
+}
+
+/* Optional: style terp tooltips for FRX */
+.brand-frx .terpene-tooltip {
+  background: #083d4c !important;
+  color: #ffffff !important;
+}

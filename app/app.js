@@ -728,7 +728,6 @@ function showMobileDetails(row) {
     categorySelect = document.getElementById("categorySelect");
     searchInput = document.getElementById("searchInput");
     btnClearSearch = document.getElementById("btnClearSearch");
-    btnLoadMore   = document.getElementById("btnLoadMore");   // NEW
 
     if (!statusEl || !fileInput || !categorySelect || !searchInput) return;
 

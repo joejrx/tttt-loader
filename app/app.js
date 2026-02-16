@@ -3,6 +3,7 @@
   // DOM references
   // -------------------------
   var statusEl, fileInput, categorySelect, searchInput, btnClearSearch;
+  var btnLoadMore;              // NEW: Load More button reference
 
   function setStatus(cls, msg) {
     if (!statusEl) return;
@@ -148,6 +149,11 @@
   // Data state
   var allRows = [];
   var lastRawRowCount = 0;
+
+  // NEW: pagination state
+  var filteredRows = [];
+  var rowsPerPage = 10;
+  var rowsShown = 0;
 
   // Sorting state
   var sortKey = null;   // active key (or null = default sort)
@@ -412,37 +418,64 @@
   }
 
   // -------------------------
-  // Mobile details panel (Option C)
+  // Render helpers for pagination
   // -------------------------
-  function showMobileDetails(row) {
-    var panel = document.getElementById("mobileDetails");
-    if (!panel) return;
 
-    var html = "";
-
-    html += '<h2>' + safeStr(row.Product) + '</h2>';
-    html += '<div style="margin-bottom:6px;">';
-    html +=   '<strong>Location:</strong> ' + safeStr(row.Location) + ' &nbsp; ';
-    html +=   '<strong>Category:</strong> ' + safeStr(row["Product Type"]) + '<br>';
-    html +=   '<strong>Room:</strong> ' + safeStr(row.Room) + '<br>';
-    html +=   '<strong>THC:</strong> ' + fmtPct(row["THC"]) + ' &nbsp; ';
-    html +=   '<strong>Total Terpenes:</strong> ' + fmtPct(row["Total Terpenes"]);
-    html += '</div>';
-
-    html += '<table><thead><tr><th>Terpene</th><th>%</th></tr></thead><tbody>';
-    for (var i = 0; i < TERP_COLS.length; i++) {
-      var key = TERP_COLS[i];
-      var val = fmtPct(row[key]);
-      if (!val) continue;
-      html += '<tr><td>' + key + '</td><td style="text-align:right;">' + val + '</td></tr>';
+  // NEW: Build one row's HTML string (base + terp cells)
+  function buildRowHtml(row) {
+    var baseCells = "";
+    for (var bc = 0; bc < BASE_COLS.length; bc++) {
+      var col = BASE_COLS[bc];
+      if (col.type === "txt") {
+        baseCells += '<td class="txt">' + safeStr(row[col.key]) + "</td>";
+      } else {
+        baseCells += '<td class="num">' + fmtPct(row[col.key]) + "</td>";
+      }
     }
-    html += '</tbody></table>';
 
-    panel.innerHTML = html;
+    var terpCells = "";
+    for (var t = 0; t < TERP_COLS.length; t++) {
+      var k = TERP_COLS[t];
+      terpCells += '<td class="num">' + fmtPct(row[k]) + "</td>";
+    }
+
+    return baseCells + terpCells;
+  }
+
+  // NEW: render the next batch of rows (for Load More)
+  function renderNextBatch() {
+    var tbody = document.querySelector("#tbl tbody");
+    if (!tbody || !filteredRows || filteredRows.length === 0) {
+      updateLoadMoreVisibility();
+      return;
+    }
+
+    var start = rowsShown;
+    var end = Math.min(rowsShown + rowsPerPage, filteredRows.length);
+
+    for (var i = start; i < end; i++) {
+      var row = filteredRows[i];
+      var tr = document.createElement("tr");
+      tr.innerHTML = buildRowHtml(row);
+      tbody.appendChild(tr);
+    }
+
+    rowsShown = end;
+    updateLoadMoreVisibility();
+  }
+
+  // NEW: show/hide Load More button
+  function updateLoadMoreVisibility() {
+    if (!btnLoadMore) return;
+    if (!filteredRows || rowsShown >= filteredRows.length) {
+      btnLoadMore.style.display = "none";
+    } else {
+      btnLoadMore.style.display = "inline-block";
+    }
   }
 
   // -------------------------
-  // Render: category + search + sorting
+  // Render: category + search + sorting (now paginated)
   // -------------------------
   function render() {
     var selectedCat = categorySelect.value;
@@ -468,44 +501,17 @@
       filtered.sort(defaultComparator);
     }
 
-var tbody = document.querySelector("#tbl tbody");
-tbody.innerHTML = "";
+    // NEW: store filtered rows, reset pagination, clear tbody, then render first batch
+    filteredRows = filtered;
+    rowsShown = 0;
 
-for (var i = 0; i < filtered.length; i++) {
-  (function(row) {
-    var baseCells = "";
-    for (var bc = 0; bc < BASE_COLS.length; bc++) {
-      var col = BASE_COLS[bc];
-      if (col.type === "txt") {
-        baseCells += '<td class="txt">' + safeStr(row[col.key]) + "</td>";
-      } else {
-        baseCells += '<td class="num">' + fmtPct(row[col.key]) + "</td>";
-      }
-    }
+    var tbody = document.querySelector("#tbl tbody");
+    tbody.innerHTML = "";
 
-    var terpCells = "";
-    for (var t = 0; t < TERP_COLS.length; t++) {
-      var k = TERP_COLS[t];
-      terpCells += '<td class="num">' + fmtPct(row[k]) + "</td>";
-    }
-
-    var tr = document.createElement("tr");
-    tr.innerHTML = baseCells + terpCells;
-
-    // 👉 This is the Step 2 “mobile behavior” addition:
-    tr.addEventListener("click", function () {
-      if (window.innerWidth <= 768) {
-        showMobileDetails(row);
-      }
-    });
-
-    tbody.appendChild(tr);
-  })(filtered[i]);
-}
-
+    renderNextBatch();  // first 10 rows
 
     var msg = "JS status: RUNNING ✅ (raw: " + lastRawRowCount + " • included: " + allRows.length +
-              " • showing: " + selectedCat + " • rows: " + filtered.length;
+              " • showing: " + selectedCat + " • rows: " + filteredRows.length;
     if (q) msg += ' • search: "' + q + '"';
     msg += ")";
     setStatus("running", msg);
@@ -688,6 +694,7 @@ for (var i = 0; i < filtered.length; i++) {
     categorySelect = document.getElementById("categorySelect");
     searchInput = document.getElementById("searchInput");
     btnClearSearch = document.getElementById("btnClearSearch");
+    btnLoadMore   = document.getElementById("btnLoadMore");   // NEW
 
     if (!statusEl || !fileInput || !categorySelect || !searchInput) return;
 
@@ -712,6 +719,14 @@ for (var i = 0; i < filtered.length; i++) {
       btnClearSearch.disabled = true;
     }
 
+    // NEW: Load More button
+    if (btnLoadMore) {
+      btnLoadMore.addEventListener("click", function () {
+        renderNextBatch();
+      });
+      btnLoadMore.style.display = "none"; // hidden until we have data
+    }
+
     setStatus("running", "JS status: RUNNING ✅ (ready for XLSX)");
     render();
   }
@@ -719,4 +734,3 @@ for (var i = 0; i < filtered.length; i++) {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();
-``

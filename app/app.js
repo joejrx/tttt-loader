@@ -443,21 +443,7 @@
   }
 
   // NEW: render the next batch of rows (for Load More)
-  function renderNextBatch() {
-   var tbody = document.querySelector("#tbl tbody");
-tbody.innerHTML = "";
 
-for (var i = 0; i < filtered.length; i++) {
-  (function(row) {  // capture row in its own closure
-    var baseCells = "";
-    for (var bc = 0; bc < BASE_COLS.length; bc++) {
-      var col = BASE_COLS[bc];
-      if (col.type === "txt") {
-        baseCells += '<td class="txt">' + safeStr(row[col.key]) + "</td>";
-      } else {
-        baseCells += '<td class="num">' + fmtPct(row[col.key]) + "</td>";
-      }
-    }
 
     var terpCells = "";
     for (var t = 0; t < TERP_COLS.length; t++) {

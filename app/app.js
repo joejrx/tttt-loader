@@ -444,21 +444,40 @@
 
   // NEW: render the next batch of rows (for Load More)
   function renderNextBatch() {
-    var tbody = document.querySelector("#tbl tbody");
-    if (!tbody || !filteredRows || filteredRows.length === 0) {
-      updateLoadMoreVisibility();
-      return;
+   var tbody = document.querySelector("#tbl tbody");
+tbody.innerHTML = "";
+
+for (var i = 0; i < filtered.length; i++) {
+  (function(row) {  // capture row in its own closure
+    var baseCells = "";
+    for (var bc = 0; bc < BASE_COLS.length; bc++) {
+      var col = BASE_COLS[bc];
+      if (col.type === "txt") {
+        baseCells += '<td class="txt">' + safeStr(row[col.key]) + "</td>";
+      } else {
+        baseCells += '<td class="num">' + fmtPct(row[col.key]) + "</td>";
+      }
     }
 
-    var start = rowsShown;
-    var end = Math.min(rowsShown + rowsPerPage, filteredRows.length);
-
-    for (var i = start; i < end; i++) {
-      var row = filteredRows[i];
-      var tr = document.createElement("tr");
-      tr.innerHTML = buildRowHtml(row);
-      tbody.appendChild(tr);
+    var terpCells = "";
+    for (var t = 0; t < TERP_COLS.length; t++) {
+      var k = TERP_COLS[t];
+      terpCells += '<td class="num">' + fmtPct(row[k]) + "</td>";
     }
+
+    var tr = document.createElement("tr");
+    tr.innerHTML = baseCells + terpCells;
+
+    // 👇 New: mobile tap behavior
+    tr.addEventListener("click", function () {
+      if (window.innerWidth <= 768) {
+        showMobileDetails(row);
+      }
+    });
+
+    tbody.appendChild(tr);
+  })(filtered[i]);
+}
 
     rowsShown = end;
     updateLoadMoreVisibility();

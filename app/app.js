@@ -473,6 +473,35 @@
       btnLoadMore.style.display = "inline-block";
     }
   }
+// -------------------------
+// Mobile details panel (Option C)
+// -------------------------
+function showMobileDetails(row) {
+  var panel = document.getElementById("mobileDetails");
+  if (!panel) return;
+
+  var html = "";
+
+  html += '<h2>' + safeStr(row.Product) + '</h2>';
+  html += '<div style="margin-bottom:6px;">';
+  html +=   '<strong>Location:</strong> ' + safeStr(row.Location) + ' &nbsp; ';
+  html +=   '<strong>Category:</strong> ' + safeStr(row["Product Type"]) + '<br>';
+  html +=   '<strong>Room:</strong> ' + safeStr(row.Room) + '<br>';
+  html +=   '<strong>THC:</strong> ' + fmtPct(row["THC"]) + ' &nbsp; ';
+  html +=   '<strong>Total Terpenes:</strong> ' + fmtPct(row["Total Terpenes"]);
+  html += '</div>';
+
+  html += '<table><thead><tr><th>Terpene</th><th>%</th></tr></thead><tbody>';
+  for (var i = 0; i < TERP_COLS.length; i++) {
+    var key = TERP_COLS[i];
+    var val = fmtPct(row[key]);
+    if (!val) continue; // skip zeros/empties
+    html += '<tr><td>' + key + '</td><td style="text-align:right;">' + val + '</td></tr>';
+  }
+  html += '</tbody></table>';
+
+  panel.innerHTML = html;
+}
 
   // -------------------------
   // Render: category + search + sorting (now paginated)

@@ -64,20 +64,52 @@
 }
 /* --- Mobile minimized terp table view (Option C) --- */
 
-/* Default: hide mobile details on desktop */
+/* Hide mobile details on desktop */
 .mobile-details {
   display: none;
 }
 
-/* Mobile breakpoint */
 @media (max-width: 768px) {
-  /* Hide terp columns starting at column 7 */
+
+  /* Make table container scroll horizontally if needed (safety) */
+  .wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ---------- COLUMN HIDING ON MOBILE ---------- */
+  /* Keep ONLY these:
+     1 = Product
+     5 = THC
+     6 = Total Terpenes
+  */
+
+  /* Hide columns 2, 3, 4 (Location, Category, Room) */
+  #hdrRow th:nth-child(2),
+  #hdrRow th:nth-child(3),
+  #hdrRow th:nth-child(4),
+  #tbl tbody tr td:nth-child(2),
+  #tbl tbody tr td:nth-child(3),
+  #tbl tbody tr td:nth-child(4) {
+    display: none;
+  }
+
+  /* Hide all terp columns (7 and onward) */
   #hdrRow th:nth-child(n+7),
   #tbl tbody tr td:nth-child(n+7) {
     display: none;
   }
 
-  /* Mobile details panel styling */
+  /* ---------- PRODUCT COLUMN SIZING ---------- */
+  #tbl td:nth-child(1),
+  #hdrRow th:nth-child(1) {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ---------- MOBILE DETAILS PANEL ---------- */
   .mobile-details {
     display: block;
     margin-top: 12px;
@@ -85,11 +117,6 @@
     border-radius: 8px;
     background: #f3f4f6;
     font-size: 0.9rem;
-  }
-
-  .mobile-details h2 {
-    margin: 0 0 8px;
-    font-size: 1rem;
   }
 
   .mobile-details table {
@@ -105,12 +132,7 @@
     padding: 4px 6px;
   }
 
-  .mobile-details th {
-    background: #e5e7eb;
-    font-weight: 600;
-  }
-
-  /* Make rows tappable */
+  /* ---------- MAKE ROWS TAPPABLE ---------- */
   #tbl tbody tr {
     cursor: pointer;
   }

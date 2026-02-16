@@ -137,3 +137,54 @@
     cursor: pointer;
   }
 }
+/* MOBILE CARD VIEW FOR TTTT (Option C refined) */
+@media (max-width: 768px) {
+
+  /* Hide the desktop table entirely on mobile */
+  .wrap {
+    display: none;
+  }
+
+  /* Mobile card container */
+  .tttt-mobile-card {
+    background: #ffffff;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    font-size: 0.95rem;
+  }
+
+  .tttt-mobile-card-title {
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .tttt-mobile-card-meta {
+    color: #555;
+    font-size: 0.82rem;
+    margin-bottom: 6px;
+  }
+
+  .tttt-mobile-card-stats {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+
+  .tttt-mobile-card-expand {
+    color: #0066cc;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-top: 6px;
+    cursor: pointer;
+  }
+
+  /* Show mobile details panel */
+  .mobile-details {
+    display: block;
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f3f4f6;
+  }
+}

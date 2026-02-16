@@ -62,3 +62,56 @@
   overflow-y: auto;
   position: relative;
 }
+/* --- Mobile minimized terp table view (Option C) --- */
+
+/* Default: hide mobile details on desktop */
+.mobile-details {
+  display: none;
+}
+
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+  /* Hide terp columns starting at column 7 */
+  #hdrRow th:nth-child(n+7),
+  #tbl tbody tr td:nth-child(n+7) {
+    display: none;
+  }
+
+  /* Mobile details panel styling */
+  .mobile-details {
+    display: block;
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    font-size: 0.9rem;
+  }
+
+  .mobile-details h2 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+  }
+
+  .mobile-details table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 0.8rem;
+  }
+
+  .mobile-details th,
+  .mobile-details td {
+    border: 1px solid #ddd;
+    padding: 4px 6px;
+  }
+
+  .mobile-details th {
+    background: #e5e7eb;
+    font-weight: 600;
+  }
+
+  /* Make rows tappable */
+  #tbl tbody tr {
+    cursor: pointer;
+  }
+}

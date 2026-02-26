@@ -146,6 +146,188 @@
       text-align: left; 
     }
 
+    th.sortable {Awesome, thanks for sticking with this and for pointing out what you’re seeing at the bottom of the file. 🙌  
+
+You’re right: your current script is *close* to what I showed, but at this point the easiest, least‑confusing fix is:
+
+> 🔧 **Replace the entire `cfalls-dev/index.html` file with one clean, known-good version.**
+
+That way we’re not fighting tiny differences or leftovers from earlier attempts.
+
+---
+
+## ✅ What this new file will do
+
+For **Cuyahoga Falls (cfalls-dev)**:
+
+- Sticky header stays as you already had it ✔  
+- Shows **5 rows initially** ✔  
+- Each click on **Show More** reveals **5 more rows** ✔  
+- The **Show More button stays visible** as long as there are more rows to show ✔  
+- When there are no more rows, clicking the button just does nothing (no errors) ✔  
+
+We’re **not touching Room logic** yet — we’ll handle that separately in `app.js` once this is behaving exactly how you want.
+
+---
+
+## 🔁 Step 1 – Replace the entire file
+
+Please **replace everything** in your local `cfalls-dev/index.html` with the content below.
+
+> In your editor:  
+> 1. Select all (Ctrl+A)  
+> 2. Delete  
+> 3. Paste everything between the ```html and ``` markers
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TTTT Loader – Cuyahoga Falls</title>
+
+  <!-- Shared tooltip + terp info styles for all locations -->
+  <link rel="stylesheet" href="../app/tttt-shared.css?v=9016" />
+
+  <style>
+    :root {
+      /* FRX theme */
+      --color-primary:        #1D70A2;
+      --color-accent:         #3AAFB9;
+      --color-background:     #F4F4F6;
+      --color-card-bg:        #FFFFFF;
+      --color-dark:           #1B1D1F;
+      --color-text-primary:   #1B1D1F;
+      --color-text-secondary: #606266;
+      --color-highlight:      #3AAFB9;
+      --color-success:        #27AE60;
+      --color-error:          #E74C3C;
+    }
+
+    body { 
+      font-family: Arial, sans-serif; 
+      padding: 40px; 
+      line-height: 1.45;
+      background: var(--color-background);
+      color: var(--color-text-primary);
+    }
+
+    h1 {
+      margin-top: 0;
+      margin-bottom: 6px;
+    }
+
+    .small { 
+      color: var(--color-text-secondary); 
+      margin: 6px 0 12px; 
+    }
+
+    .status {
+      display: inline-block; 
+      padding: 10px 12px; 
+      border-radius: 8px; 
+      margin: 10px 0 14px;
+      font-weight: 800;
+    }
+
+    /* Operational (non‑brand) status colors */
+    .checking { background: #ffeeba; color: #7a5a00; }
+    .running  { background: #d4edda; color: #155724; }
+    .error    { background: #f8d7da; color: #721c24; }
+
+    .controls { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 12px; 
+      align-items: flex-end; 
+      margin: 10px 0 10px; 
+    }
+
+    .ctrl { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 6px; 
+      min-width: 220px; 
+    }
+
+    label { 
+      font-weight: 700; 
+    }
+
+    input[type="file"], 
+    input[type="text"], 
+    input[type="search"], 
+    select {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      background: var(--color-card-bg);
+      color: var(--color-text-primary);
+    }
+
+    input[type="text"], 
+    input[type="search"] { 
+      width: 260px; 
+    }
+
+    #btnClearSearch {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--color-primary);
+      background: var(--color-accent);
+      cursor: pointer;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    #btnClearSearch:hover { 
+      background: var(--color-primary); 
+    }
+
+    #btnClearSearch:disabled { 
+      opacity: 0.4; 
+      cursor: not-allowed; 
+    }
+
+    .wrap { 
+      overflow-x: auto; 
+      -webkit-overflow-scrolling: touch; 
+      margin-top: 10px;
+    }
+
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      min-width: 1600px; 
+      background: var(--color-card-bg);
+    }
+
+    th, td { 
+      border: 1px solid #ccc; 
+      padding: 8px 10px; 
+      vertical-align: top; 
+    }
+
+    th { 
+      background: var(--color-primary); 
+      color: #ffffff; 
+      position: sticky; 
+      top: 0; 
+      z-index: 2; 
+    }
+
+    th.num, td.num { 
+      text-align: right; 
+      font-variant-numeric: tabular-nums; 
+      white-space: nowrap; 
+    }
+
+    th.txt, td.txt { 
+      text-align: left; 
+    }
+
     th.sortable { 
       cursor: pointer; 
       user-select: none; 
@@ -233,62 +415,61 @@
   <script src="../vendor/xlsx.full.min.js?v=9016"></script>
   <script src="../app/app.js?v=9016" defer></script>
 
-<!-- SCRIPT: LIMIT TO 5 ROWS, "SHOW MORE" ADDS 5 MORE EACH CLICK -->
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.getElementById("btnShowMore");
-    const table = document.getElementById("tbl");
-    if (!btn || !table) return;
+  <!-- SCRIPT: LIMIT TO 5 ROWS, "SHOW MORE" ADDS 5 MORE EACH CLICK -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("btnShowMore");
+      const table = document.getElementById("tbl");
+      if (!btn || !table) return;
 
-    const tbody = table.querySelector("tbody");
-    let visibleCount = 0;
+      const tbody = table.querySelector("tbody");
+      let visibleCount = 0;
 
-    // Apply the 5-row limit whenever the table data changes
-    const applyRowLimit = () => {
-      const rows = Array.from(tbody.querySelectorAll("tr"));
-      const total = rows.length;
+      // Apply the 5-row limit whenever the table data changes
+      const applyRowLimit = () => {
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        const total = rows.length;
 
-      if (total === 0) {
-        visibleCount = 0;
-        btn.style.display = "none";
-        return;
-      }
+        if (total === 0) {
+          visibleCount = 0;
+          btn.style.display = "none";
+          return;
+        }
 
-      // Start with 5 visible (or fewer if there aren't that many)
-      visibleCount = Math.min(5, total);
-
-      rows.forEach((row, index) => {
-        const shouldHide = index >= visibleCount;
-        row.classList.toggle("hidden-row", shouldHide);
-      });
-
-      // Show button only if there are more than 5 rows total
-      btn.style.display = total > visibleCount ? "inline-block" : "none";
-    };
-
-    // Watch for rows being added/removed by app.js (XLSX load, filters, etc.)
-    const observer = new MutationObserver(applyRowLimit);
-    observer.observe(tbody, { childList: true });
-
-    // Each click shows 5 more rows (button stays visible)
-    btn.addEventListener("click", () => {
-      const rows = Array.from(tbody.querySelectorAll("tr"));
-      const total = rows.length;
-
-      if (visibleCount < total) {
-        visibleCount = Math.min(visibleCount + 5, total);
+        // Start with 5 visible (or fewer if there aren't that many)
+        visibleCount = Math.min(5, total);
 
         rows.forEach((row, index) => {
           const shouldHide = index >= visibleCount;
           row.classList.toggle("hidden-row", shouldHide);
         });
-      }
 
-      // NOTE: we do NOT hide the button here.
-      // If there are no more rows, clicking does nothing, but the UI stays consistent.
+        // Show button only if there are more than 5 rows total
+        btn.style.display = total > visibleCount ? "inline-block" : "none";
+      };
+
+      // Watch for rows being added/removed by app.js (XLSX load, filters, etc.)
+      const observer = new MutationObserver(applyRowLimit);
+      observer.observe(tbody, { childList: true });
+
+      // Each click shows 5 more rows (button stays visible)
+      btn.addEventListener("click", () => {
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        const total = rows.length;
+
+        if (visibleCount < total) {
+          visibleCount = Math.min(visibleCount + 5, total);
+
+          rows.forEach((row, index) => {
+            const shouldHide = index >= visibleCount;
+            row.classList.toggle("hidden-row", shouldHide);
+          });
+        }
+
+        // NOTE: we do NOT hide the button here.
+        // If there are no more rows, clicking does nothing, but the UI stays consistent.
+      });
     });
-  });
-</script>
-
+  </script>
 </body>
 </html>

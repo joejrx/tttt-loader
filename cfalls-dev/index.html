@@ -248,14 +248,13 @@
       const rows = Array.from(tbody.querySelectorAll("tr"));
       const total = rows.length;
 
-      // No rows = no button
       if (total === 0) {
         visibleCount = 0;
         btn.style.display = "none";
         return;
       }
 
-      // On each data update, start by showing up to 5 rows
+      // Start with 5 visible (or fewer if there aren't that many)
       visibleCount = Math.min(5, total);
 
       rows.forEach((row, index) => {
@@ -263,7 +262,7 @@
         row.classList.toggle("hidden-row", shouldHide);
       });
 
-      // Only show the button if there are more rows to reveal
+      // Show button only if there are more than 5 rows total
       btn.style.display = total > visibleCount ? "inline-block" : "none";
     };
 
@@ -271,7 +270,7 @@
     const observer = new MutationObserver(applyRowLimit);
     observer.observe(tbody, { childList: true });
 
-    // Each click shows 5 more rows
+    // Each click shows 5 more rows (button stays visible)
     btn.addEventListener("click", () => {
       const rows = Array.from(tbody.querySelectorAll("tr"));
       const total = rows.length;
@@ -285,10 +284,8 @@
         });
       }
 
-      // Hide the button once everything is visible
-      if (visibleCount >= total) {
-        btn.style.display = "none";
-      }
+      // NOTE: we do NOT hide the button here.
+      // If there are no more rows, clicking does nothing, but the UI stays consistent.
     });
   });
 </script>

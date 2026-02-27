@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TTTT Loader – Elyria</title>
   
-<!-- Shared tooltip + terp info styles for all locations -->
+  <!-- Shared tooltip + terp info styles for all locations -->
   <link rel="stylesheet" href="../app/tttt-shared.css?v=9016" />
-
 
   <style>
     :root {
@@ -163,6 +162,26 @@
     .muted { 
       color: var(--color-text-secondary); 
     }
+
+    /* Hides rows after the initial 5 */
+    tr.hidden-row {
+      display: none;
+    }
+
+    #btnShowMore {
+      margin: 12px 0;
+      padding: 10px 16px;
+      background: var(--color-primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #btnShowMore:hover {
+      background: var(--color-accent);
+    }
   </style>
 </head>
 
@@ -205,9 +224,54 @@
     </table>
   </div>
 
-  <!-- NOTE: paths are ../ because we are inside /cfalls/ -->
+  <!-- SHOW MORE BUTTON -->
+  <button id="btnShowMore" style="display:none;">Show More</button>
+
+  <!-- NOTE: paths are ../ because we are inside /elyria/ -->
   <script src="../vendor/xlsx.full.min.js?v=9016"></script>
   <script src="../app/app.js?v=9016" defer></script>
+
+  <!-- SIMPLE 5→10 ROW LOGIC -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("btnShowMore");
+      const tbody = document.querySelector("#tbl tbody");
+
+      // Limit to 5 rows once data loads
+      const limitRows = () => {
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        const total = rows.length;
+
+        if (total === 0) {
+          btn.style.display = "none";
+          return;
+        }
+
+        rows.forEach((row, i) => {
+          row.classList.toggle("hidden-row", i >= 5);
+        });
+
+        btn.style.display = total > 5 ? "inline-block" : "none";
+      };
+
+      // Reveal up to 10 rows max
+      btn.addEventListener("click", () => {
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        rows.forEach((row, i) => {
+          row.classList.toggle("hidden-row", i >= 10);
+        });
+        btn.style.display = "none";
+      });
+
+      // Wait for XLSX → app.js to populate
+      const obs = new MutationObserver(() => {
+        obs.disconnect();
+        setTimeout(limitRows, 150);
+      });
+
+      obs.observe(tbody, { childList: true });
+    });
+  </script>
+
 </body>
 </html>
-``

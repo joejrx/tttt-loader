@@ -580,10 +580,23 @@
     var uiCat = mapToUiCategory(rawCat);
     if (!uiCat) return null;
 
+    // Normalize room to "Sales Floor" for UI
+    var roomRaw = roomKey ? safeStr(raw[roomKey]) : "";
+    var roomNorm = roomRaw.trim();
+    if (
+      !roomNorm ||
+      roomNorm.toLowerCase() === "vault" ||
+      roomNorm.toLowerCase() === "holding" ||
+      roomNorm.toLowerCase() === "quarantine" ||
+      roomNorm.toLowerCase() === "backstock"
+    ) {
+      roomNorm = "Sales Floor";
+    }
+
     var row = {
       "Product": product,
       "Location": locKey ? safeStr(raw[locKey]) : "",
-      "Room": roomKey ? safeStr(raw[roomKey]) : "",
+      "Room": roomNorm,
       "Product Type": uiCat,
       "THC": normalizePercent(thcKey ? raw[thcKey] : ""),
       "Total Terpenes": 0

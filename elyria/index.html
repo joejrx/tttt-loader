@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TTTT Loader – Elyria</title>
   
-<!-- Shared tooltip + terp info styles for all locations -->
+  <!-- Shared tooltip + terp info styles for all locations -->
   <link rel="stylesheet" href="../app/tttt-shared.css?v=9016" />
-
 
   <style>
     :root {
@@ -163,6 +162,27 @@
     .muted { 
       color: var(--color-text-secondary); 
     }
+
+    /* Hide rows after applying limit */
+    tr.hidden-row {
+      display: none;
+    }
+
+    /* Show More button (inside wrap for mobile) */
+    #btnShowMore {
+      margin: 12px 0;
+      padding: 10px 16px;
+      background: var(--color-primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #btnShowMore:hover {
+      background: var(--color-accent);
+    }
   </style>
 </head>
 
@@ -204,24 +224,23 @@
       <tbody></tbody>
     </table>
 
-    <!-- SHOW MORE BUTTON INSIDE WRAP (mobile-friendly) -->
+    <!-- Show More button INSIDE wrap (better for mobile) -->
     <button id="btnShowMore" style="display:none;">Show More</button>
-
-  </div> <!-- end .wrap -->
-
+  </div>
 
   <!-- NOTE: paths are ../ because we are inside /elyria/ -->
   <script src="../vendor/xlsx.full.min.js?v=9016"></script>
   <script src="../app/app.js?v=9016" defer></script>
 
-  <!-- SIMPLE 5→10 SHOW MORE BEHAVIOR -->
+  <!-- 5→10 Show More behavior (coexists with app.js 10-row paging) -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const btn = document.getElementById("btnShowMore");
       const tbody = document.querySelector("#tbl tbody");
+      if (!btn || !tbody) return;
 
-      // Limit to 5 rows after data loads
-      const limitRows = () => {
+      // Apply "show 5 rows" rule
+      const applyLimit = () => {
         const rows = Array.from(tbody.querySelectorAll("tr"));
         const total = rows.length;
 
@@ -230,14 +249,16 @@
           return;
         }
 
+        // Hide rows 6–10 (and beyond, if app.js ever changes)
         rows.forEach((row, i) => {
           row.classList.toggle("hidden-row", i >= 5);
         });
 
+        // Show button only if there are more than 5 rows
         btn.style.display = total > 5 ? "inline-block" : "none";
       };
 
-      // Show up to 10 rows max
+      // Show up to 10 rows total when clicked
       btn.addEventListener("click", () => {
         const rows = Array.from(tbody.querySelectorAll("tr"));
         rows.forEach((row, i) => {
@@ -246,16 +267,17 @@
         btn.style.display = "none";
       });
 
-      // Wait for app.js to populate the table
+      // Re-apply 5-row limit whenever app.js redraws tbody
       const obs = new MutationObserver(() => {
-        obs.disconnect();
-        setTimeout(limitRows, 150);
+        // tiny delay lets app.js finish writing rows
+        setTimeout(applyLimit, 50);
       });
-
       obs.observe(tbody, { childList: true });
+
+      // Safety: if rows are already there when DOMContentLoaded runs
+      setTimeout(applyLimit, 500);
     });
   </script>
 
 </body>
 </html>
-``

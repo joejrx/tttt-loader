@@ -177,5 +177,50 @@
 
   <script src="../vendor/xlsx.full.min.js?v=9016"></script>
   <script src="../app/app.js?v=9016" defer></script>
+   <!-- 5 → 10 Show More logic -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("btnShowMore");
+      const tbody = document.querySelector("#tbl tbody");
+
+      if (!btn || !tbody) return;
+
+      // Show first 5 rows
+      const applyLimit = () => {
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        const total = rows.length;
+
+        if (total === 0) {
+          btn.style.display = "none";
+          return;
+        }
+
+        rows.forEach((row, i) => {
+          row.classList.toggle("hidden-row", i >= 5);
+        });
+
+        btn.style.display = total > 5 ? "inline-block" : "none";
+      };
+
+      // Expand to 10 rows max
+      btn.addEventListener("click", () => {
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        rows.forEach((row, i) => {
+          row.classList.toggle("hidden-row", i >= 10);
+        });
+        btn.style.display = "none";
+      });
+
+      // Re-apply limit when app.js redraws rows
+      const obs = new MutationObserver(() => {
+        setTimeout(applyLimit, 50);
+      });
+
+      obs.observe(tbody, { childList: true });
+
+      // Initial fallback
+      setTimeout(applyLimit, 500);
+    });
+  </script>
 </body>
 </html>

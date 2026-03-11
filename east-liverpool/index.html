@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TTTT Loader – East Liverpool</title>
-  
+
   <!-- Shared tooltip + terp info styles for all locations -->
-  ../app/tttt-shared.css?v=9016
+  <link rel="stylesheet" href="../app/tttt-shared.css?v=9016" />
 
   <style>
     :root {
@@ -131,15 +131,12 @@
     th.sortable:hover { background: var(--color-accent); }
 
     .sort-ind { font-weight: 900; }
-
     .muted { color: var(--color-text-secondary); }
 
     /* Hide rows after #5 */
-    tr.hidden-row {
-      display: none;
-    }
+    tr.hidden-row { display: none; }
 
-    /* Show More button inside wrap for mobile */
+    /* Show More button INSIDE wrap for mobile */
     #btnShowMore {
       margin: 12px 0;
       padding: 10px 16px;
@@ -151,9 +148,7 @@
       cursor: pointer;
     }
 
-    #btnShowMore:hover {
-      background: var(--color-primary);
-    }
+    #btnShowMore:hover { background: var(--color-accent); }
   </style>
 </head>
 
@@ -195,34 +190,40 @@
       <tbody></tbody>
     </table>
 
-    <!-- Show More button inside wrap -->
+    <!-- Show More button INSIDE wrap -->
     <button id="btnShowMore" style="display:none;">Show More</button>
   </div>
 
- <!-- NOTE: paths are ../ because we are inside /east-liverpool/ -->
+ <!-- NOTE: paths are ../ because we are inside /cfalls/ -->
 <script src="../vendor/xlsx.full.min.js?v=9016"></script>
 <script src="../app/app.js?v=9016" defer></script>
 
-  <!-- Simple 5→10 Show More logic -->
+  <!-- 5 → 10 Show More logic -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const btn = document.getElementById("btnShowMore");
       const tbody = document.querySelector("#tbl tbody");
+
       if (!btn || !tbody) return;
 
+      // Show first 5 rows
       const applyLimit = () => {
         const rows = Array.from(tbody.querySelectorAll("tr"));
         const total = rows.length;
+
         if (total === 0) {
           btn.style.display = "none";
           return;
         }
+
         rows.forEach((row, i) => {
           row.classList.toggle("hidden-row", i >= 5);
         });
+
         btn.style.display = total > 5 ? "inline-block" : "none";
       };
 
+      // Expand to 10 rows max
       btn.addEventListener("click", () => {
         const rows = Array.from(tbody.querySelectorAll("tr"));
         rows.forEach((row, i) => {
@@ -231,12 +232,15 @@
         btn.style.display = "none";
       });
 
+      // Re-apply limit when app.js redraws rows
       const obs = new MutationObserver(() => {
         setTimeout(applyLimit, 50);
       });
+
       obs.observe(tbody, { childList: true });
 
-      setTimeout(applyLimit, 400);
+      // Initial fallback
+      setTimeout(applyLimit, 500);
     });
   </script>
 

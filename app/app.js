@@ -583,6 +583,24 @@
     // Normalize room to "Sales Floor" for UI
     var roomRaw = roomKey ? safeStr(raw[roomKey]) : "";
     var roomNorm = roomRaw.trim();
+    // After you’ve computed roomNorm (the cleaned-up room string)
+
+var roomLower = roomNorm.toLowerCase();
+
+// If the room is not “sales floor”, skip this row entirely
+if (roomLower !== "sales floor") {
+  return null;  // do not include this in the table
+}
+
+// Otherwise, build the row
+var row = {
+  "Product": product,
+  "Location": locKey ? safeStr(raw[locKey]) : "",
+  "Room": roomNorm,
+  "Product Type": uiCat,
+  "THC": ...,
+  "Total Terpenes": 0
+};
     if (
       !roomNorm ||
       roomNorm.toLowerCase() === "vault" ||

@@ -580,11 +580,9 @@
     var uiCat = mapToUiCategory(rawCat);
     if (!uiCat) return null;
 
-    // Normalize room to "Sales Floor" for UI
-    var roomRaw = roomKey ? safeStr(raw[roomKey]) : "";
-    var roomNorm = roomRaw.trim();
-    // After you’ve computed roomNorm (the cleaned-up room string)
-
+// Normalize room to "Sales Floor" for UI
+var roomRaw = roomKey ? safeStr(raw[roomKey]) : "";
+var roomNorm = roomRaw.trim();
 var roomLower = roomNorm.toLowerCase();
 
 // If the room is not “sales floor”, skip this row entirely
@@ -592,45 +590,27 @@ if (roomLower !== "sales floor") {
   return null;  // do not include this in the table
 }
 
-// Otherwise, build the row
+// Build the row (Sales Floor only)
 var row = {
   "Product": product,
   "Location": locKey ? safeStr(raw[locKey]) : "",
   "Room": roomNorm,
   "Product Type": uiCat,
-  "THC": ...,
+  "THC": normalizePercent(thcKey ? raw[thcKey] : ""),
   "Total Terpenes": 0
 };
-    if (
-      !roomNorm ||
-      roomNorm.toLowerCase() === "vault" ||
-      roomNorm.toLowerCase() === "holding" ||
-      roomNorm.toLowerCase() === "quarantine" ||
-      roomNorm.toLowerCase() === "backstock"
-    ) {
-      roomNorm = "Sales Floor";
-    }
 
-    var row = {
-      "Product": product,
-      "Location": locKey ? safeStr(raw[locKey]) : "",
-      "Room": roomNorm,
-      "Product Type": uiCat,
-      "THC": normalizePercent(thcKey ? raw[thcKey] : ""),
-      "Total Terpenes": 0
-    };
+var total = 0;
+for (var t = 0; t < TERP_COLS.length; t++) {
+  var terpName = TERP_COLS[t];
+  var terpKey = findColumn(raw, [terpName]);
+  var v = normalizePercent(terpKey ? raw[terpKey] : "");
+  row[terpName] = v;
+  total += v;
+}
 
-    var total = 0;
-    for (var t = 0; t < TERP_COLS.length; t++) {
-      var terpName = TERP_COLS[t];
-      var terpKey = findColumn(raw, [terpName]);
-      var v = normalizePercent(terpKey ? raw[terpKey] : "");
-      row[terpName] = v;
-      total += v;
-    }
-
-    row["Total Terpenes"] = Math.round(total * 100) / 100;
-    return row;
+row["Total Terpenes"] = Math.round(total * 100) / 100;
+return row;
   }
 
   function pickFirstNonEmptySheet(wb) {

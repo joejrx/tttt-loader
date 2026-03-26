@@ -143,8 +143,9 @@
     { key: "Total Terpenes", label: "Total Terpenes", type: "num" }
   ];
 
-  // Always show these categories (no ALL), default Flower
-  var UI_CATEGORIES = ["Flower","Vape","Concentrate"];
+ // Always show these categories (no ALL), default Flower
+// Added "Pre-Rolls" between Flower and Vape
+var UI_CATEGORIES = ["Flower", "Pre-Rolls", "Vape", "Concentrate"];
 
   // Data state
   var allRows = [];

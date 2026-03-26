@@ -192,28 +192,55 @@
   }
 
   function mapToUiCategory(rawCat) {
-    var c = String(rawCat || "").toLowerCase();
+  var c = String(rawCat || "").toLowerCase();
 
-    if (c === "flower") return "Flower";
+  // Flower bucket
+  if (c === "flower") return "Flower";
 
-    // Vape bucket
-    if (c.indexOf("vape") >= 0 || c.indexOf("cartridge") >= 0 || c.indexOf("cartridges") >= 0 || c.indexOf("disposable") >= 0) {
-      return "Vape";
-    }
-
-    // Concentrate bucket
-    if (
-      c.indexOf("budder") >= 0 || c.indexOf("badder") >= 0 || c.indexOf("sugar") >= 0 || c.indexOf("sauce") >= 0 ||
-      c.indexOf("resin") >= 0 || c.indexOf("rosin") >= 0 || c.indexOf("wax") >= 0 || c.indexOf("shatter") >= 0 ||
-      c.indexOf("concentrate") >= 0
-    ) {
-      return "Concentrate";
-    }
-
-    if (c === "vape") return "Vape";
-    if (c === "concentrate") return "Concentrate";
-    return "";
+  // Pre-Rolls bucket
+  // Catch common variants from Dutchie / inventory:
+  // "Pre-Roll", "Pre-Rolls", "Preroll", "Prerolls", "Pre Roll", etc.
+  if (
+    c.indexOf("pre-roll") >= 0 ||
+    c.indexOf("preroll") >= 0 ||
+    c.indexOf("pre roll") >= 0 ||
+    c.indexOf("joint") >= 0   // optional: include "Joints" if your data uses that
+  ) {
+    return "Pre-Rolls";
   }
+
+  // Vape bucket
+  if (
+    c.indexOf("vape") >= 0 ||
+    c.indexOf("cartridge") >= 0 ||
+    c.indexOf("cartridges") >= 0 ||
+    c.indexOf("disposable") >= 0
+  ) {
+    return "Vape";
+  }
+
+  // Concentrate bucket
+  if (
+    c.indexOf("budder") >= 0 ||
+    c.indexOf("badder") >= 0 ||
+    c.indexOf("sugar") >= 0 ||
+    c.indexOf("sauce") >= 0 ||
+    c.indexOf("resin") >= 0 ||
+    c.indexOf("rosin") >= 0 ||
+    c.indexOf("wax") >= 0 ||
+    c.indexOf("shatter") >= 0 ||
+    c.indexOf("concentrate") >= 0
+  ) {
+    return "Concentrate";
+  }
+
+  // Exact fallbacks
+  if (c === "vape") return "Vape";
+  if (c === "concentrate") return "Concentrate";
+
+  // Anything that doesn't match a known bucket is excluded
+  return "";
+}
 
   // -------------------------
   // Terp header tooltip behavior

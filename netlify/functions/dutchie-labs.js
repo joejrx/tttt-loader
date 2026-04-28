@@ -24,12 +24,15 @@ exports.handler = async function (event) {
 
     const dutchieUrl = "https://api.dutchie.com/v1/lab_results";
 
-    const response = await fetch(dutchieUrl, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-    });
+ const response = await fetch(dutchieUrl, {
+  headers: {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "Accept-Language": "en-US,en;q=0.9",
+    "User-Agent": "Mozilla/5.0 (compatible; TerpTable/1.0)"
+  },
+});
 
     if (!response.ok) {
       const text = await response.text();

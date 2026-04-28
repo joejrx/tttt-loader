@@ -1,4 +1,4 @@
-export async function handler(event) {
+exports.handler = async function (event) {
   try {
     // Read location from query string
     const params = event.queryStringParameters || {};

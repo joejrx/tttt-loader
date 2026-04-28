@@ -18,6 +18,34 @@
     statusEl.className = "status " + cls;
     statusEl.textContent = msg;
   }
+async function loadFromDutchie() {
+  try {
+    setStatus("running", "JS status: RUNNING ✅ (loading from Dutchie API…)");
+
+    const res = await fetch(
+      "https://stellar-gingersnap-38e8bf.netlify.app/.netlify/functions/dutchie-labs" +
+      "?location=" + TERP_TABLE_LOCATION
+    );
+
+    if (!res.ok) {
+      throw new Error("Dutchie API error");
+    }
+
+    const rawRows = await res.json();
+
+    var normalized = [];
+    for (var i = 0; i < rawRows.length; i++) {
+      var n = normalizeRow(rawRows[i]);
+      if (n) normalized.push(n);
+    }
+
+    allRows = normalized;
+    render();
+  } catch (err) {
+    console.error(err);
+    setStatus("error", "Dutchie API unavailable — XLSX still available");
+  }
+}
 
   function safeStr(x) { return (x == null) ? "" : String(x); }
 
@@ -775,6 +803,7 @@ return row;
     }
 
     setStatus("running", "JS status: RUNNING ✅ (ready for XLSX)");
+    loadFromDutchie();
     render();
   }
 

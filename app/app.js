@@ -1,5 +1,13 @@
 (function () {
   // -------------------------
+  // Location & brand identity (from index.html)
+  // -------------------------
+  var TERP_TABLE_LOCATION = window.TERP_TABLE_LOCATION || "UNKNOWN_LOCATION";
+  var TERP_TABLE_BRAND = window.TERP_TABLE_BRAND || "UNKNOWN_BRAND";
+
+  console.log("TTTT location:", TERP_TABLE_LOCATION);
+  console.log("TTTT brand:", TERP_TABLE_BRAND);
+  // -------------------------
   // DOM references
   // -------------------------
   var statusEl, fileInput, categorySelect, searchInput, btnClearSearch;

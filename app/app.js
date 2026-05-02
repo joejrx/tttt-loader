@@ -20,35 +20,50 @@
   }
 
 async function loadFromDutchie() {
-  console.log("loadFromDutchie START", TERP_TABLE_LOCATION);
- {
   try {
-    setStatus("running", "JS status: RUNNING ✅ (loading from Dutchie API…)");
-  console.log("ABOUT TO FETCH DUTCHIE");
-const res = await fetch(
-  "https://tttt-git-tttt-sandbox-joejrxs-projects.vercel.app/api/dutchie-labs" +
-  "?location=" + TERP_TABLE_LOCATION
-);
+    console.log("loadFromDutchie START", TERP_TABLE_LOCATION);
 
-    if (!res.ok) {
-      throw new Error("Dutchie API error");
+    setStatus("running", "JS status: RUNNING ✅ (loading from Dutchie API)");
+
+    const url =
+      "https://tttt-git-tttt-sandbox-joejrxs-projects.vercel.app/api/dutchie-labs" +
+      "?location=" + TERP_TABLE_LOCATION;
+
+    console.log("ABOUT TO FETCH DUTCHIE", url);
+
+    const res = await fetch(url);
+
+    console.log("FETCH STATUS", res.status);
+
+    const text = await res.text();
+    console.log("RAW RESPONSE (first 200 chars)", text.slice(0, 200));
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      throw new Error("Response was not valid JSON");
     }
 
-    const rawRows = await res.json();
+    if (!Array.isArray(data)) {
+      throw new Error("Dutchie response was not an array");
+    }
 
-    var normalized = [];
-    for (var i = 0; i < rawRows.length; i++) {
-      var n = normalizeRow(rawRows[i]);
+    const normalized = [];
+    for (let i = 0; i < data.length; i++) {
+      const n = normalizeRow(data[i]);
       if (n) normalized.push(n);
     }
 
     allRows = normalized;
     render();
+
   } catch (err) {
-    console.error(err);
+    console.error("Dutchie load failed:", err);
     setStatus("error", "Dutchie API unavailable — XLSX still available");
   }
 }
+
 
   function safeStr(x) { return (x == null) ? "" : String(x); }
 

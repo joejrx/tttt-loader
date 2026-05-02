@@ -1,11 +1,10 @@
 export default async function handler(req, res) {
 
-  // ✅ CORS HEADERS — MUST BE FIRST
+  // ✅ CORS (already working)
   res.setHeader("Access-Control-Allow-Origin", "https://joejrx.github.io");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // ✅ Handle browser preflight
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -19,7 +18,6 @@ export default async function handler(req, res) {
 
     const DUTCHIE_KEYS = {
       FRX_EAST_LIVERPOOL: process.env.DUTCHIE_API_KEY_FRX_EAST_LIVERPOOL,
-      // add other locations later
     };
 
     const apiKey = DUTCHIE_KEYS[location];
@@ -27,30 +25,44 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "Invalid or unauthorized location" });
     }
 
-    const dutchieUrl = "https://api.dutchie.com/v1/lab_results";
+    // 🔍 INVENTORY PROBE #1
+    const dutchieUrl =
+      "https://api.dutchie.com/v1/inventory?includeLabResults=true";
 
     const response = await fetch(dutchieUrl, {
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
         "Accept": "application/json",
-        "Accept-Language": "en-US,en;q=0.9",
         "User-Agent": "Mozilla/5.0 (compatible; TerpTable/1.0)",
       },
     });
 
     const text = await response.text();
 
-    // If Dutchie/Cloudflare returns HTML, surface it clearly
-    if (!response.ok || text.startsWith("<!DOCTYPE")) {
+    // Log raw response for inspection
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
       return res.status(502).json({
-        error: "Dutchie blocked request",
+        error: "Non-JSON response from inventory endpoint",
         raw: text.substring(0, 500),
       });
     }
 
-    const data = JSON.parse(text);
-    return res.status(200).json(data);
+    // 🔍 DIAGNOSTICS (THIS IS WHAT WE CARE ABOUT)
+    const sample = Array.isArray(data) ? data[0] : data?.items?.[0];
+
+    return res.status(200).json({
+      diagnostic: {
+        isArray: Array.isArray(data),
+        topLevelKeys: Object.keys(data || {}),
+        sampleKeys: sample ? Object.keys(sample) : null,
+        labResultsPresent: !!sample?.labResults,
+        labResultsValue: sample?.labResults || null,
+      },
+      sampleItem: sample || null,
+    });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });

@@ -1,4 +1,15 @@
 export default async function handler(req, res) {
+
+  // ✅ CORS HEADERS — MUST BE FIRST
+  res.setHeader("Access-Control-Allow-Origin", "https://joejrx.github.io");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // ✅ Handle browser preflight
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   try {
     const location = req.query.location;
 
@@ -45,4 +56,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message });
   }
 }
-``

@@ -22,11 +22,10 @@ async function loadFromDutchie() {
   try {
     setStatus("running", "JS status: RUNNING ✅ (loading from Dutchie API…)");
 
-    const res = await fetch(
-      "
-https://tttt-git-tttt-sandbox-joejrxs-projects.vercel.app/api/dutchie-labs
-" +      "?location=" + TERP_TABLE_LOCATION
-    );
+const res = await fetch(
+  "https://tttt-git-tttt-sandbox-joejrxs-projects.vercel.app/api/dutchie-labs" +
+  "?location=" + TERP_TABLE_LOCATION
+);
 
     if (!res.ok) {
       throw new Error("Dutchie API error");

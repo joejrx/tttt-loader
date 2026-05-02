@@ -23,8 +23,9 @@ async function loadFromDutchie() {
     setStatus("running", "JS status: RUNNING ✅ (loading from Dutchie API…)");
 
     const res = await fetch(
-      "https://stellar-gingersnap-38e8bf.netlify.app/.netlify/functions/dutchie-labs" +
-      "?location=" + TERP_TABLE_LOCATION
+      "
+https://tttt-git-tttt-sandbox-joejrxs-projects.vercel.app/api/dutchie-labs
+" +      "?location=" + TERP_TABLE_LOCATION
     );
 
     if (!res.ok) {

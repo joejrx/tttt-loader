@@ -18,10 +18,13 @@
     statusEl.className = "status " + cls;
     statusEl.textContent = msg;
   }
+
 async function loadFromDutchie() {
+  console.log("loadFromDutchie START", TERP_TABLE_LOCATION);
+ {
   try {
     setStatus("running", "JS status: RUNNING ✅ (loading from Dutchie API…)");
-
+  console.log("ABOUT TO FETCH DUTCHIE");
 const res = await fetch(
   "https://tttt-git-tttt-sandbox-joejrxs-projects.vercel.app/api/dutchie-labs" +
   "?location=" + TERP_TABLE_LOCATION

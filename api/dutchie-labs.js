@@ -26,8 +26,7 @@ export default async function handler(req, res) {
     }
 
     // 🔍 INVENTORY PROBE #1
-    const dutchieUrl =
-      "https://api.dutchie.com/v1/inventory?includeLabResults=true";
+    const dutchieUrl = "https://api.pos.dutchie.com/inventory/labresults";
 
     const response = await fetch(dutchieUrl, {
       headers: {

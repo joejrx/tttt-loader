@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dispensary Visit Scorecard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    padding: 16px;
+  }
+  h1 { margin-bottom: 12px; }
+  .card { background: white; padding: 16px; border-radius: 6px; }
+  .section { background: white; padding: 16px; margin-top: 16px; border-radius: 6px; }
+  textarea { margin-top: 6px; }
+  input[type="radio"] { transform: scale(1.2); margin-right: 4px; }
+  @media (max-width: 768px) { .section ul li { margin-bottom: 6px; } }
+  .performance-unacceptable { color: #b00020; font-weight: bold; }
+  .performance-needs        { color: #e65100; font-weight: bold; }
+  .performance-meets        { color: #2e7d32; font-weight: bold; }
+  .performance-exceeds      { color: #1565c0; font-weight: bold; }
+  .performance-outstanding  { color: #6a1b9a; font-weight: bold; }
+  .rating-missing { border: 2px solid #e65100 !important; background-color: #fff3e0; }
+
+  #submitInspection { font-size:16px; padding:10px 14px; width:100%; cursor:pointer; }
+  #submitInspection:disabled { opacity:0.6; cursor:not-allowed; }
+
+  .spinner {
+    display:inline-block; width:16px; height:16px;
+    border:3px solid #ccc; border-top-color:#333;
+    border-radius:50%; animation:spin 0.8s linear infinite;
+    vertical-align:middle; margin-right:6px;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<h1>Dispensary Visit Scorecard</h1>
+
+<div class="card">
+  <div><strong>Status:</strong> <span id="status">Loading…</span></div>
+  <div>
+    <strong>Score:</strong>
+    <span id="score">0</span> /
+    <span id="scoreMax">100</span>
+    (+<span id="bonus">0</span> bonus)
+  </div>
+</div>
+
+<div class="section" id="visit-details">
+  <h2>Store Being Visited</h2>
+
+  <label for="storeSelect" style="font-weight:bold">Select Dispensary</label>
+  <select id="storeSelect" style="width:100%; margin-top:6px">
+    <option value="">— Select a location —</option>
+    <option value="East Liverpool">East Liverpool</option>
+    <option value="Elyria">Elyria</option>
+    <option value="Cuyahoga Falls">Cuyahoga Falls</option>
+    <option value="Harrison">Harrison</option>
+    <option value="Norwood">Norwood</option>
+    <option value="New Paris">New Paris</option>
+    <option value="Keowee">Keowee</option>
+    <option value="Third St. Dayton">Third St. Dayton</option>
+  </select>
+
+  <label for="storeManagers" style="font-weight:bold; margin-top:10px; display:block;">Store Manager(s)</label>
+  <input type="text" id="storeManagers" style="width:100%; margin-top:6px;" />
+
+  <label for="personVisiting" style="font-weight:bold; margin-top:10px; display:block;">Person Visiting</label>
+  <input type="text" id="personVisiting" style="width:100%; margin-top:6px;" />
+
+  <label for="inspectorEmail" style="font-weight:bold; margin-top:10px; display:block;">Your Email (confirmation copy)</label>
+  <input type="email" id="inspectorEmail" placeholder="yourname@frxdispensaries.com" style="width:100%; margin-top:6px;" />
+
+  <label for="visitDate" style="font-weight:bold; margin-top:10px; display:block;">Date of Visit</label>
+  <input type="date" id="visitDate" style="width:100%; margin-top:6px;" />
+</div>
+
+<div id="reviewScreen" class="section" style="display:none;"></div>
+
+<div class="section" id="scoring-rubric">
+  <h2>1–5 Scoring Rubric</h2>
+  <ul style="padding-left:18px; margin:0;">
+    <li><strong>5 – Exceeds Expectations:</strong> Performance consistently exceeds company standards.</li>
+    <li><strong>4 – Above Average:</strong> Above standard with minor opportunities.</li>
+    <li><strong>3 – Fully Compliant:</strong> Meets all company standards.</li>
+    <li><strong>2 – Partial / Needs Improvement:</strong> Some standards met; improvement required.</li>
+    <li><strong>1 – Non‑Compliant:</strong> Does not meet standards; immediate attention required.</li>
+  </ul>
+</div>
+
+<div id="inspection"></div>
+
+<div class="section">
+  <button type="button" onclick="resetInspection()" style="font-size:14px;padding:8px 12px;width:100%;background:#fff3e0;border:2px solid #e65100;color:#e65100;margin-bottom:8px;cursor:pointer;">
+    🔄 Reset Inspection (QA)
+  </button>
+</div>
+
+<div class="section">
+  <button id="submitInspection" type="button">Review &amp; Submit Inspection</button>
+</div>
+
+<script>
+// ===============================
+// CONFIGURATION
+// ===============================
+const POWER_AUTOMATE_URL = '';
+const SHAREPOINT_UPLOAD_URL = 'https://frxohio.sharepoint.com/sites/DispensaryOperationsInspections/Inspection%20Submissions/Forms/AllItems.aspx?id=%2Fsites%2FDispensaryOperationsInspections%2FInspection%20Submissions%2FIncoming&viewid=7fd54ebd%2Dc6d0%2D45fe%2D9012%2Df18864e1e8ea&newTargetListUrl=%2Fsites%2FDispensaryOperationsInspections%2FInspection%20Submissions&viewpath=%2Fsites%2FDispensaryOperationsInspections%2FInspection%20Submissions%2FForms%2FAllItems%2Easpx';
+
+const PHOTO_UPLOAD_URL = 'https://defaulted1b912b5ff6456b8eb226a6bf7251.d0.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/46191bdca02945728403f0d4accbdf45/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=bqXJ-tXpt1O33lTuS5CCLAod-m3g2QZQujbTEufmNJQ';
+
+const QA_MODE = true;
+const COMPLIANCE_PASS_SCORE = 85;
+const DRAFT_KEY = 'dispensary_inspection_draft_v1';
+
+const LOCATION_RECIPIENTS = {
+  'East Liverpool':  ['jwinters@frxdispensaries.com', 'tsilver@frxdispensaries.com', 'AXenakis@frxohio.com'],
+  'Elyria':          ['dbrown@frxdispensaries.com', 'AXenakis@frxohio.com'],
+  'Cuyahoga Falls':  ['tjohnson@frxdispensaries.com', 'marnold@frxdispensaries.com', 'AXenakis@frxohio.com'],
+  'Harrison':        ['MWilks@queenccanna.com', 'AChaillet@queenccanna.com', 'AXenakis@frxohio.com'],
+  'Norwood':         ['mgilb@queenccanna.com', 'AXenakis@frxohio.com'],
+  'New Paris':       ['bjones@frxdispensaries.com', 'aheindl@frxdispensaries.com', 'AXenakis@frxohio.com'],
+  'Keowee':          ['jzile@frxdispensaries.com', 'AXenakis@frxohio.com'],
+  'Third St. Dayton': ['jjeffries@frxdispensaries.com', 'AXenakis@frxohio.com']
+};
+
+// ===============================
+// STATE
+// ===============================
+let photos      = {};
+let notes       = {};
+let ratings     = {};
+let selectedStore   = '';
+let storeManagers   = '';
+let personVisiting  = '';
+let inspectorEmail  = '';
+let visitDate       = '';
+let currentConfig;
+
+// ===============================
+// DRAFT SAVE / LOAD
+// ===============================
+function saveDraft() {
+  const draft = { selectedStore, storeManagers, personVisiting, inspectorEmail, visitDate, ratings, notes, draftSavedAt: new Date().toISOString() };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function loadDraftIfExists() {
+  const raw = localStorage.getItem(DRAFT_KEY);
+  if (!raw) return;
+  try {
+    const draft = JSON.parse(raw);
+    selectedStore  = draft.selectedStore  || '';
+    storeManagers  = draft.storeManagers  || '';
+    personVisiting = draft.personVisiting || '';
+    inspectorEmail = draft.inspectorEmail || '';
+    visitDate      = draft.visitDate      || '';
+    ratings        = draft.ratings        || {};
+    notes          = draft.notes          || {};
+  } catch(e) {
+    localStorage.removeItem(DRAFT_KEY);
+  }
+}
+
+function resetInspection() {
+  if (!confirm('This will clear the current inspection and start fresh.\n\nContinue?')) return;
+  localStorage.removeItem(DRAFT_KEY);
+  ratings = {}; notes = {}; photos = {};
+  selectedStore = ''; storeManagers = ''; personVisiting = ''; inspectorEmail = ''; visitDate = '';
+  document.querySelectorAll('input, textarea, select, button').forEach(el => el.disabled = false);
+  location.reload();
+}
+
+// ===============================
+// HEADER FIELD LISTENERS
+// ===============================
+document.getElementById('storeSelect').addEventListener('change', e => { selectedStore = e.target.value; saveDraft(); if (currentConfig) updateScore(currentConfig); });
+document.getElementById('storeManagers').addEventListener('input', e => { storeManagers = e.target.value; saveDraft(); });
+document.getElementById('personVisiting').addEventListener('input', e => { personVisiting = e.target.value; saveDraft(); });
+document.getElementById('inspectorEmail').addEventListener('input', e => { inspectorEmail = e.target.value; saveDraft(); });
+document.getElementById('visitDate').addEventListener('change', e => { visitDate = e.target.value; saveDraft(); });
+document.getElementById('submitInspection').addEventListener('click', showReviewScreen);
+
+// ===============================
+// LOAD CONFIG
+// ===============================
+fetch('config.json')
+  .then(r => r.json())
+  .then(cfg => {
+    currentConfig = cfg;
+    loadDraftIfExists();
+    document.getElementById('status').innerText = 'Loaded: ' + cfg.inspectionMeta.inspectionName;
+    document.getElementById('scoreMax').innerText = cfg.inspectionMeta.baseScoreMax;
+    renderInspection(cfg);
+    rehydrateRatingsUI();
+    if (QA_MODE) renderQAModeButton();
+    renderSummary(cfg.summary);
+    document.getElementById('storeSelect').value    = selectedStore;
+    document.getElementById('storeManagers').value  = storeManagers;
+    document.getElementById('personVisiting').value = personVisiting;
+    document.getElementById('inspectorEmail').value = inspectorEmail;
+    document.getElementById('visitDate').value      = visitDate;
+    updateScore(cfg);
+  })
+  .catch(err => {
+    document.getElementById('status').innerText = 'Config load error: ' + err.message;
+  });
+
+// ===============================
+// REHYDRATE UI
+// ===============================
+function rehydrateRatingsUI() {
+  Object.entries(ratings).forEach(([id, value]) => {
+    if (value === 'yes' || value === 'no' || value === null) {
+      const radioValue = value === null ? 'na' : value;
+      const radio = document.querySelector(`input[name="${id}"][value="${radioValue}"]`);
+      if (radio) radio.checked = true;
+    }
+    if (typeof value === 'number') {
+      const select = document.querySelector(`select[name="${id}"]`);
+      if (select) select.value = String(value);
+    }
+  });
+}
+
+// ===============================
+// RENDER SUMMARY
+// ===============================
+function renderSummary(summaryConfig) {
+  if (!summaryConfig?.fields) return;
+  const container = document.createElement('div');
+  container.className = 'section';
+  const h2 = document.createElement('h2');
+  h2.innerText = summaryConfig.title;
+  container.appendChild(h2);
+
+  summaryConfig.fields.forEach(field => {
+    const wrapper = document.createElement('div');
+    wrapper.style.marginBottom = '20px';
+
+    const label = document.createElement('div');
+    label.innerText = field.label;
+    label.style.fontWeight = 'bold';
+    label.style.marginBottom = '4px';
+
+    const textarea = document.createElement('textarea');
+    textarea.id = field.id;
+    textarea.style.width = '100%';
+    textarea.style.minHeight = '100px';
+    if (field.maxLength) textarea.maxLength = field.maxLength;
+    if (notes[field.id]) textarea.value = notes[field.id];
+    textarea.addEventListener('input', e => { notes[field.id] = e.target.value; saveDraft(); });
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(textarea);
+
+    if (field.allowPhotos) {
+      const photoContainer = document.createElement('div');
+      photoContainer.style.marginTop = '6px';
+
+      const photoLabel = document.createElement('div');
+      photoLabel.innerText = 'Attach one or more photos';
+      photoLabel.style.fontWeight = 'bold';
+      photoLabel.style.fontSize = '13px';
+
+      const photoInput = document.createElement('input');
+      photoInput.type = 'file';
+      photoInput.accept = 'image/*';
+      photoInput.multiple = true;
+
+      const photoCount = document.createElement('div');
+      photoCount.style.fontSize = '12px';
+      photoCount.style.color = '#555';
+      photoCount.style.marginTop = '4px';
+      photoCount.innerText = 'No photos attached';
+
+      photoInput.addEventListener('change', e => {
+        const newFiles = Array.from(e.target.files);
+        if (!photos[field.id]) photos[field.id] = [];
+        newFiles.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            photos[field.id].push({ name: file.name, type: file.type, data: reader.result });
+            const count = photos[field.id].length;
+            photoCount.innerText = count === 1 ? '1 photo attached' : `${count} photos attached`;
+          };
+          reader.readAsDataURL(file);
+        });
+        photoInput.value = '';
+      });
+
+      photoContainer.appendChild(photoLabel);
+      photoContainer.appendChild(photoInput);
+      photoContainer.appendChild(photoCount);
+      wrapper.appendChild(photoContainer);
+    }
+
+    container.appendChild(wrapper);
+  });
+
+  document.getElementById('inspection').appendChild(container);
+}
+
+// ===============================
+// RENDER INSPECTION QUESTIONS
+// ===============================
+function renderInspection(cfg) {
+  const container = document.getElementById('inspection');
+  container.innerHTML = '';
+
+  cfg.sections.forEach(section => {
+    const sectionDiv = document.createElement('div');
+    sectionDiv.className = 'section';
+    const h2 = document.createElement('h2');
+    h2.innerText = section.title;
+    sectionDiv.appendChild(h2);
+
+    section.questions.forEach(q => {
+      const row = document.createElement('div');
+      row.style.marginBottom = '16px';
+
+      const label = document.createElement('div');
+      label.innerText = q.label;
+      label.style.fontWeight = 'bold';
+
+      const notesContainer = document.createElement('div');
+      notesContainer.style.display = 'none';
+      notesContainer.style.marginTop = '6px';
+      const notesLabel = document.createElement('div');
+      notesLabel.innerText = 'Notes';
+      notesLabel.style.fontWeight = 'bold';
+      notesLabel.style.fontSize = '13px';
+      const notesInput = document.createElement('textarea');
+      notesInput.style.width = '100%';
+      notesInput.style.minHeight = '60px';
+      if (notes[q.id]) notesInput.value = notes[q.id];
+      notesInput.addEventListener('input', e => { notes[q.id] = e.target.value; saveDraft(); });
+      notesContainer.appendChild(notesLabel);
+      notesContainer.appendChild(notesInput);
+
+      const photoContainer = document.createElement('div');
+      photoContainer.style.display = 'none';
+      photoContainer.style.marginTop = '6px';
+      const photoLabel = document.createElement('div');
+      photoLabel.innerText = 'Attach one or more photos';
+      photoLabel.style.fontWeight = 'bold';
+      photoLabel.style.fontSize = '13px';
+      const photoInput = document.createElement('input');
+      photoInput.type = 'file';
+      photoInput.accept = 'image/*';
+      photoInput.multiple = true;
+      const photoCount = document.createElement('div');
+      photoCount.style.fontSize = '12px';
+      photoCount.style.color = '#555';
+      photoCount.style.marginTop = '4px';
+      photoCount.innerText = 'No photos attached';
+
+      photoInput.addEventListener('change', e => {
+        const newFiles = Array.from(e.target.files);
+        if (!photos[q.id]) photos[q.id] = [];
+        newFiles.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            photos[q.id].push({ name: file.name, type: file.type, data: reader.result });
+            const count = photos[q.id].length;
+            photoCount.innerText = count === 1 ? '1 photo attached' : `${count} photos attached`;
+          };
+          reader.readAsDataURL(file);
+        });
+        photoInput.value = '';
+      });
+
+      photoContainer.appendChild(photoLabel);
+      photoContainer.appendChild(photoInput);
+      photoContainer.appendChild(photoCount);
+
+      let inputEl;
+
+      if (q.type === 'yesno') {
+        inputEl = document.createElement('div');
+        inputEl.innerHTML = `
+          <label style="margin-right:16px;"><input type="radio" name="${q.id}" value="yes"> Yes</label>
+          <label style="margin-right:16px;"><input type="radio" name="${q.id}" value="no"> No</label>
+          <label><input type="radio" name="${q.id}" value="na"> NA</label>
+        `;
+        inputEl.querySelectorAll('input[type="radio"]').forEach(radio => {
+          radio.addEventListener('change', e => {
+            const value = e.target.value;
+            ratings[q.id] = value === 'na' ? null : value;
+            saveDraft();
+            updateScore(currentConfig);
+            if (value === 'no' && cfg.notes?.autoShowOn?.yesno?.includes(value)) {
+              notesContainer.style.display = 'block';
+              photoContainer.style.display = 'block';
+            } else {
+              notesContainer.style.display = 'none';
+              photoContainer.style.display = 'none';
+            }
+          });
+        });
+      } else {
+        inputEl = document.createElement('select');
+        inputEl.name = q.id;
+        inputEl.innerHTML = `
+          <option value="">Select score</option>
+          <option value="na">NA</option>
+          <option value="1">1 – Non‑Compliant</option>
+          <option value="2">2 – Partial / Needs Improvement</option>
+          <option value="3">3 – Fully Compliant</option>
+          <option value="4">4 – Above Average</option>
+          <option value="5">5 – Exceeds Expectations</option>
+        `;
+        inputEl.addEventListener('change', e => {
+          const rawValue = e.target.value;
+          let value = null;
+          if (rawValue !== '' && rawValue !== 'na') {
+            const parsed = Number(rawValue);
+            value = Number.isFinite(parsed) ? parsed : null;
+          }
+          ratings[q.id] = value;
+          saveDraft();
+          updateScore(currentConfig);
+          if (Number.isFinite(value) && cfg.notes?.autoShowOn?.graded?.includes(value)) {
+            notesContainer.style.display = 'block';
+            photoContainer.style.display = 'block';
+          } else {
+            notesContainer.style.display = 'none';
+            photoContainer.style.display = 'none';
+          }
+        });
+      }
+
+      row.appendChild(label);
+      row.appendChild(inputEl);
+      row.appendChild(notesContainer);
+      row.appendChild(photoContainer);
+      sectionDiv.appendChild(row);
+    });
+
+    container.appendChild(sectionDiv);
+  });
+}
+
+// ===============================
+// SCORING
+// ===============================
+function isCompliant(q, value) {
+  if (q.type === 'yesno') return value === 'yes';
+  return typeof value === 'number' && value >= 3;
+}
+
+function calculateBaseScore() {
+  let total = 0, compliant = 0;
+  currentConfig.sections.forEach(section => {
+    section.questions.forEach(q => {
+      const value = ratings[q.id];
+      if (value === null || value === undefined) return;
+      total += 1;
+      if (isCompliant(q, value)) compliant += 1;
+    });
+  });
+  if (total === 0) return 0;
+  return Math.round((compliant / total) * 100);
+}
+
+function calculateAverageRating() {
+  const values = Object.values(ratings).filter(v => typeof v === 'number');
+  if (values.length === 0) return null;
+  return Number((values.reduce((sum, v) => sum + v, 0) / values.length).toFixed(1));
+}
+
+function performanceLabelFromRating(avg) {
+  if (avg === null || avg === undefined) return '—';
+  if (avg < 2.0) return 'Non-Compliant';
+  if (avg < 3.0) return 'Partial / Needs Improvement';
+  if (avg < 4.0) return 'Fully Compliant';
+  if (avg < 4.5) return 'Above Average';
+  return 'Exceeds Expectations';
+}
+
+function performanceClassFromLabel(label) {
+  switch (label) {
+    case 'Non-Compliant':              return 'performance-unacceptable';
+    case 'Partial / Needs Improvement': return 'performance-needs';
+    case 'Fully Compliant':            return 'performance-meets';
+    case 'Above Average':              return 'performance-exceeds';
+    case 'Exceeds Expectations':       return 'performance-outstanding';
+    default: return '';
+  }
+}
+
+function updateScore(cfg) {
+  if (!selectedStore) { document.getElementById('score').innerText = 0; document.getElementById('bonus').innerText = 0; return; }
+  document.getElementById('score').innerText = calculateBaseScore();
+  document.getElementById('bonus').innerText = 0;
+}
+
+function showValidationError(msg) {
+  let errBox = document.getElementById('validationError');
+  if (!errBox) {
+    errBox = document.createElement('div');
+    errBox.id = 'validationError';
+    errBox.style.cssText = 'background:#ffebee;border:2px solid #b00020;color:#b00020;padding:12px 16px;margin-top:12px;border-radius:6px;font-weight:bold;font-size:15px;white-space:pre-wrap;';
+    const submitSection = document.getElementById('submitInspection')?.closest('div') || document.body;
+    submitSection.parentNode?.insertBefore(errBox, submitSection) || document.body.appendChild(errBox);
+  }
+  errBox.innerText = msg;
+  errBox.style.display = 'block';
+  errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function clearValidationError() {
+  const errBox = document.getElementById('validationError');
+  if (errBox) errBox.style.display = 'none';
+}
+
+function allQuestionsHaveRatings() {
+  const missing = [];
+  currentConfig.sections.forEach(section => {
+    section.questions.forEach(q => {
+      const value = ratings[q.id];
+      if (value === undefined || value === '' || (q.type === 'graded' && value === null)) {
+        missing.push({ section: section.title, label: q.label });
+      }
+    });
+  });
+  if (missing.length > 0) {
+    const preview = missing.slice(0, 3).map(m => `• ${m.section}: ${m.label}`).join('\n');
+    const extra = missing.length > 3 ? `\n…and ${missing.length - 3} more` : '';
+    showValidationError(`⚠️ ${missing.length} question(s) still unanswered:\n\n${preview}${extra}`);
+    return false;
+  }
+  clearValidationError();
+  return true;
+}
+
+// ===============================
+// BUILD PAYLOAD HELPERS
+// ===============================
+function buildQuestionLabelMap(config) {
+  const map = {};
+  config.sections.forEach(s => s.questions.forEach(q => { map[q.id] = q.label; }));
+  return map;
+}
+
+function buildQuestionSectionMap(config) {
+  const map = {};
+  config.sections.forEach(s => s.questions.forEach(q => { map[q.id] = s.title; }));
+  return map;
+}
+
+function buildFlaggedItems(config) {
+  const flagged = [];
+  config.sections.forEach(section => {
+    section.questions.forEach(q => {
+      const value = ratings[q.id];
+      if (value === null || value === undefined) return;
+      const failed = (q.type === 'yesno' && value === 'no') ||
+                     (q.type === 'graded' && typeof value === 'number' && value <= 2);
+      if (failed) {
+        flagged.push({
+          section: section.title,
+          label: q.label,
+          id: q.id,
+          value: value,
+          critical: q.critical === true,
+          note: notes[q.id] || '',
+          photoCount: (photos[q.id] || []).length
+        });
+      }
+    });
+  });
+  return flagged;
+}
+
+// ===============================
+// PHOTO UPLOAD
+// ===============================
+function buildPhotoList() {
+  const list = [];
+  Object.entries(photos).forEach(([fieldId, fileList]) => {
+    if (!Array.isArray(fileList)) return;
+    fileList.forEach((photo, index) => {
+      const ext = photo.name.split('.').pop() || 'jpg';
+      const safeName = fieldId.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+      list.push({
+        fieldId,
+        filename: `${safeName}_${index + 1}.${ext}`,
+        mimeType: photo.type,
+        fileData: photo.data.split(',')[1]
+      });
+    });
+  });
+  return list;
+}
+
+async function uploadPhotos(store, date, onProgress) {
+  const photoList = buildPhotoList();
+  if (photoList.length === 0) return { uploaded: 0, folderUrl: null };
+
+  let uploaded = 0;
+  let folderUrl = null;
+
+  for (const photo of photoList) {
+    uploaded++;
+    onProgress(uploaded, photoList.length);
+
+    const body = {
+      store: store,
+      date: date,
+      fieldId: photo.fieldId,
+      filename: photo.filename,
+      mimeType: photo.mimeType,
+      fileData: photo.fileData
+    };
+
+    const response = await fetch(PHOTO_UPLOAD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Photo upload failed for ${photo.filename}: ${response.status}`);
+    }
+
+    const text = await response.text();
+    if (text && text.startsWith('http')) folderUrl = text.trim();
+  }
+
+  return { uploaded, folderUrl };
+}
+
+// ===============================
+// BUILD EMAIL HTML
+// ===============================
+function buildEmailHTML(payload) {
+  const baseScore      = payload.complianceScore;
+  const avgRating      = payload.performanceRating;
+  const perfLabel      = payload.performanceLabel;
+  const flagged        = payload.flaggedItems;
+  const compliantColor = baseScore >= COMPLIANCE_PASS_SCORE ? '#2e7d32' : '#b00020';
+  const compliantIcon  = baseScore >= COMPLIANCE_PASS_SCORE ? '✅ Compliant' : '❌ Non-Compliant';
+
+  let flaggedHTML = '';
+  if (flagged.length === 0) {
+    flaggedHTML = '<p style="color:#2e7d32;"><em>✓ No flagged items — all sections passed.</em></p>';
+  } else {
+    let lastSection = '';
+    flagged.forEach(item => {
+      if (item.section !== lastSection) {
+        if (lastSection !== '') flaggedHTML += '</table>';
+        flaggedHTML += `<h3 style="margin:16px 0 4px;border-bottom:1px solid #ddd;padding-bottom:4px;">${item.section}</h3>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
+            <tr>
+              <th style="text-align:left;padding:4px 6px;background:#f4f6f8;border-bottom:2px solid #ccc;">Item</th>
+              <th style="text-align:center;padding:4px 6px;background:#f4f6f8;border-bottom:2px solid #ccc;">Score</th>
+              <th style="text-align:left;padding:4px 6px;background:#f4f6f8;border-bottom:2px solid #ccc;">Notes</th>
+            </tr>`;
+        lastSection = item.section;
+      }
+      const scoreDisplay = item.value === 'no' ? 'NO' : `${item.value}/5`;
+      const critBadge    = item.critical ? ' <span style="background:#b00020;color:white;font-size:10px;padding:1px 4px;border-radius:3px;">CRITICAL</span>' : '';
+      const itemPhotos   = photos[item.id] || [];
+      const inlinePhotos = itemPhotos.length > 0
+        ? `<div style="margin-top:4px;font-size:12px;color:#555;">📎 ${itemPhotos.map((p,i) => { const ext = p.name.split('.').pop() || 'jpg'; const safeName = item.id.replace(/[^a-z0-9_]/gi,'_').toLowerCase(); return `${safeName}_${i+1}.${ext}`; }).join(', ')}</div>`
+        : '';
+
+      flaggedHTML += `<tr style="border-bottom:1px solid #eee;">
+        <td style="padding:6px;">${item.label}${critBadge}</td>
+        <td style="padding:6px;text-align:center;font-weight:bold;color:#b00020;">${scoreDisplay}</td>
+        <td style="padding:6px;color:#555;">${item.note || '—'}${inlinePhotos}</td>
+      </tr>`;
+    });
+    flaggedHTML += '</table>';
+  }
+
+  const summaryFields = [
+    { key: 'what_is_going_well',    label: 'What is going well' },
+    { key: 'areas_need_improvement', label: 'Areas needing improvement' }
+  ];
+  let summaryHTML = '';
+  summaryFields.forEach(f => {
+    const val = notes[f.key];
+    if (val && val.trim()) summaryHTML += `<p><strong>${f.label}:</strong><br/>${val}</p>`;
+  });
+
+  let anomaliesHTML = '';
+  [1,2,3].forEach(i => {
+    const key       = `other_anomaly_${i}`;
+    const val       = notes[key];
+    const photoList = photos[key] || [];
+    if ((val && val.trim()) || photoList.length > 0) {
+      anomaliesHTML += `<div style="margin-bottom:16px;"><p><strong>Observation #${i}:</strong> ${val || '(no notes)'}</p>`;
+      if (photoList.length > 0) anomaliesHTML += `<div style="margin-top:4px;font-size:12px;color:#555;">📎 ${photoList.map((p,i) => { const ext = p.name.split('.').pop() || 'jpg'; const safeName = key.replace(/[^a-z0-9_]/gi,'_').toLowerCase(); return `${safeName}_${i+1}.${ext}`; }).join(', ')}</div>`;
+      anomaliesHTML += '</div>';
+    }
+  });
+
+  const visitDateFormatted = payload.visitDate
+    ? new Date(payload.visitDate + 'T12:00:00').toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' })
+    : '—';
+
+  const photoFolderHTML = payload.photoFolderUrl
+    ? `<p style="background:#e8f5e9;border:1px solid #2e7d32;padding:10px;border-radius:4px;">
+        📁 <strong>Photos:</strong> <a href="${payload.photoFolderUrl}">${payload.photoFolderUrl}</a>
+       </p>`
+    : '';
+
+  let fullReportHTML = `
+    <h2 style="border-top:2px solid #000;padding-top:12px;margin-top:24px;">Full Inspection Results</h2>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <th style="text-align:left;border-bottom:2px solid #000;padding:6px;">Question</th>
+        <th style="text-align:left;border-bottom:2px solid #000;padding:6px;">Answer</th>
+        <th style="text-align:left;border-bottom:2px solid #000;padding:6px;">Notes</th>
+      </tr>`;
+
+  if (currentConfig) {
+    currentConfig.sections.forEach(section => {
+      const sectionIssues = section.questions.filter(q => {
+        const value = ratings[q.id];
+        if (value === null || value === undefined) return false;
+        return (q.type === 'yesno' && value === 'no') ||
+               (q.type === 'graded' && typeof value === 'number' && value <= 2);
+      });
+
+      fullReportHTML += `<tr><td colspan="3" style="padding:10px 6px;font-weight:bold;background:#f4f6f8;border-top:2px solid #000;">${section.title}</td></tr>`;
+
+      if (sectionIssues.length === 0) {
+        fullReportHTML += `<tr><td colspan="3" style="padding:8px 6px;border-bottom:1px solid #ddd;color:#2e7d32;font-style:italic;">✓ No findings in this section</td></tr>`;
+      } else {
+        sectionIssues.forEach(q => {
+          const value = ratings[q.id];
+          const scoreDisplay = value === 'no' ? 'NO' : `${value}/5`;
+          const note = notes[q.id] || '';
+          const critBadge = q.critical ? ' <span style="background:#b00020;color:white;font-size:10px;padding:1px 4px;border-radius:3px;">CRITICAL</span>' : '';
+          const itemPhotos = photos[q.id] || [];
+          const inlinePhotos = itemPhotos.length > 0
+            ? `<div style="margin-top:4px;font-size:12px;color:#555;">📎 ${itemPhotos.map((p,i) => { const ext = p.name.split('.').pop() || 'jpg'; const safeName = q.id.replace(/[^a-z0-9_]/gi,'_').toLowerCase(); return `${safeName}_${i+1}.${ext}`; }).join(', ')}</div>`
+            : '';
+
+          fullReportHTML += `<tr style="border-bottom:1px solid #ddd;">
+            <td style="padding:6px;">${q.label}${critBadge}</td>
+            <td style="padding:6px;font-weight:bold;color:#b00020;">${scoreDisplay}</td>
+            <td style="padding:6px;color:#555;">${note}${inlinePhotos}</td>
+          </tr>`;
+        });
+      }
+    });
+  }
+
+  fullReportHTML += `</table>`;
+
+  const sigHTML = `
+    <hr style="margin-top:32px;border:none;border-top:2px solid #000;" />
+    <div style="margin-top:20px;font-size:14px;text-align:center;">
+      <strong>Inspector:</strong> ${payload.personVisiting}<br/>
+      <strong>Date:</strong> ${visitDateFormatted}
+    </div>
+    <div style="margin-top:36px;text-align:center;">
+      <strong>Inspector Signature:</strong><br/>
+      <div style="margin:20px auto 0 auto;border-bottom:1px solid #000;width:300px;"></div>
+    </div>
+    <div style="margin-top:36px;text-align:center;">
+      <strong>Store Manager Acknowledgment:</strong><br/>
+      <div style="margin:20px auto 0 auto;border-bottom:1px solid #000;width:300px;"></div>
+    </div>`;
+
+  return `
+<div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;">
+  <div style="background:#1a1a2e;color:white;padding:20px 24px;border-radius:6px 6px 0 0;">
+    <h1 style="margin:0;font-size:22px;">Dispensary Operations Inspection</h1>
+    <div style="margin-top:4px;font-size:14px;opacity:0.85;">${visitDateFormatted}</div>
+  </div>
+  <div style="background:white;padding:20px 24px;border:1px solid #ddd;border-top:none;">
+    <table style="width:100%;margin-bottom:16px;">
+      <tr>
+        <td style="padding:4px 0;"><strong>Store:</strong></td>
+        <td style="padding:4px 0;">${payload.store}</td>
+        <td style="padding:4px 0;"><strong>Manager(s):</strong></td>
+        <td style="padding:4px 0;">${payload.storeManagers}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;"><strong>Inspector:</strong></td>
+        <td style="padding:4px 0;">${payload.personVisiting}</td>
+        <td style="padding:4px 0;"><strong>Date:</strong></td>
+        <td style="padding:4px 0;">${visitDateFormatted}</td>
+      </tr>
+    </table>
+
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;background:#f9f9f9;border-radius:6px;">
+      <tr>
+        <td style="padding:12px 16px;border-right:1px solid #ddd;text-align:center;">
+          <div style="font-size:28px;font-weight:bold;color:${compliantColor};">${baseScore}%</div>
+          <div style="font-size:12px;color:#666;">Compliance Score</div>
+        </td>
+        <td style="padding:12px 16px;border-right:1px solid #ddd;text-align:center;">
+          <div style="font-size:20px;font-weight:bold;color:${compliantColor};">${compliantIcon}</div>
+          <div style="font-size:12px;color:#666;">Status</div>
+        </td>
+        <td style="padding:12px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:bold;">${avgRating ?? '—'}</div>
+          <div style="font-size:12px;color:#666;">${perfLabel}</div>
+        </td>
+      </tr>
+    </table>
+
+    ${photoFolderHTML}
+
+    <h2 style="border-top:2px solid #000;padding-top:12px;">Flagged Items (${flagged.length})</h2>
+    ${flaggedHTML}
+    ${summaryHTML ? `<h2 style="border-top:2px solid #000;padding-top:12px;">Summary</h2>${summaryHTML}` : ''}
+    ${anomaliesHTML ? `<h2 style="border-top:2px solid #000;padding-top:12px;">Observations &amp; Anomalies</h2>${anomaliesHTML}` : ''}
+    ${fullReportHTML}
+    ${sigHTML}
+
+    <hr style="margin-top:32px;border:none;border-top:1px solid #ddd;"/>
+    <div style="margin-top:12px;font-size:12px;color:#999;text-align:center;">
+      Submitted by ${payload.personVisiting} on ${new Date(payload.submittedAt).toLocaleString()}<br/>
+      Full inspection JSON attached for records.
+    </div>
+  </div>
+</div>`;
+}
+
+// ===============================
+// REVIEW SCREEN
+// ===============================
+function showReviewScreen() {
+  clearValidationError();
+  if (!selectedStore)        { showValidationError('⚠️ Please select a store before reviewing.'); window.scrollTo(0,0); return; }
+  if (!storeManagers.trim()) { showValidationError('⚠️ Please enter the Store Manager(s).'); window.scrollTo(0,0); return; }
+  if (!personVisiting.trim()){ showValidationError('⚠️ Please enter the Person Visiting.'); window.scrollTo(0,0); return; }
+  if (!inspectorEmail.trim()){ showValidationError('⚠️ Please enter your email address for the confirmation copy.'); window.scrollTo(0,0); return; }
+  if (!visitDate)            { showValidationError('⚠️ Please enter the Date of Visit.'); window.scrollTo(0,0); return; }
+  if (!allQuestionsHaveRatings()) return;
+
+  const reviewDiv = document.getElementById('reviewScreen');
+  const avgRating = calculateAverageRating();
+  const perfLabel = performanceLabelFromRating(avgRating);
+  const perfClass = performanceClassFromLabel(perfLabel);
+  const baseScore = calculateBaseScore();
+  const flagged   = buildFlaggedItems(currentConfig);
+
+  let totalPhotos = 0;
+  Object.values(photos).forEach(arr => { if (Array.isArray(arr)) totalPhotos += arr.length; });
+
+  reviewDiv.innerHTML = `
+    <h2>Final Review</h2>
+    <p><strong>Store:</strong> ${selectedStore}</p>
+    <p><strong>Store Manager(s):</strong> ${storeManagers}</p>
+    <p><strong>Person Visiting:</strong> ${personVisiting}</p>
+    <p><strong>Inspector Email:</strong> ${inspectorEmail}</p>
+    <p><strong>Date of Visit:</strong> ${visitDate}</p>
+    <p><strong>Compliance Status:</strong> ${baseScore >= COMPLIANCE_PASS_SCORE ? '✅ Compliant' : '❌ Non-Compliant'}</p>
+    <p><strong>Compliance Score:</strong> ${baseScore} / 100</p>
+    <p><strong>Flagged Items:</strong> ${flagged.length}</p>
+    <p><strong>Photos Attached:</strong> ${totalPhotos > 0 ? `${totalPhotos} photo(s) — will upload to SharePoint on submit` : 'None'}</p>
+    <p><strong>Performance Rating (1–5):</strong> ${avgRating ?? '—'}<br/>
+       <strong>Performance Level:</strong> <span class="${perfClass}">${perfLabel}</span></p>
+    <p><strong>Recipients:</strong> ${(LOCATION_RECIPIENTS[selectedStore] || []).join(', ')}<br/>
+       <strong>+ Confirmation to:</strong> ${inspectorEmail}</p>
+    <div style="margin-top:16px;">
+      <button onclick="submitInspection()">Confirm &amp; Submit</button>
+      <button onclick="exitReviewScreen()" style="margin-left:8px;">Go Back &amp; Edit</button>
+    </div>
+  `;
+
+  document.getElementById('inspection').style.display = 'none';
+  document.getElementById('scoring-rubric').style.display = 'none';
+  reviewDiv.style.display = 'block';
+}
+
+function exitReviewScreen() {
+  document.getElementById('reviewScreen').style.display = 'none';
+  document.getElementById('inspection').style.display = 'block';
+  document.getElementById('scoring-rubric').style.display = 'block';
+  rehydrateRatingsUI();
+}
+
+// ===============================
+// SUBMIT
+// ===============================
+async function submitInspection() {
+  if (!selectedStore) { alert('Please select a store before submitting.'); return; }
+
+  const avgRating = calculateAverageRating();
+  const baseScore = calculateBaseScore();
+  const perfLabel = performanceLabelFromRating(avgRating);
+  const flagged   = buildFlaggedItems(currentConfig);
+
+  const photoSummary = {};
+  Object.entries(photos).forEach(([questionId, fileList]) => {
+    if (Array.isArray(fileList) && fileList.length > 0) photoSummary[questionId] = fileList.length;
+  });
+  const totalPhotoCount = Object.values(photoSummary).reduce((sum, n) => sum + n, 0);
+
+  const confirmBtn = document.querySelector('#reviewScreen button');
+  if (confirmBtn) confirmBtn.disabled = true;
+
+  let photoFolderUrl = null;
+  if (totalPhotoCount > 0) {
+    const reviewDiv = document.getElementById('reviewScreen');
+    const progressMsg = document.createElement('p');
+    progressMsg.id = 'uploadProgress';
+    progressMsg.style.cssText = 'background:#e3f2fd;border:1px solid #1565c0;padding:10px;border-radius:4px;font-weight:bold;';
+    progressMsg.innerText = 'Preparing photos…';
+    reviewDiv.appendChild(progressMsg);
+
+    try {
+      const result = await uploadPhotos(selectedStore, visitDate, (current, total) => {
+        progressMsg.innerText = `⬆️ Uploading photo ${current} of ${total}…`;
+      });
+      photoFolderUrl = result.folderUrl;
+      progressMsg.innerText = `✅ ${result.uploaded} photo(s) uploaded successfully.`;
+      progressMsg.style.background = '#e8f5e9';
+      progressMsg.style.borderColor = '#2e7d32';
+    } catch (err) {
+      const progressEl = document.getElementById('uploadProgress');
+      if (progressEl) {
+        progressEl.innerText = `⚠️ Photo upload failed: ${err.message}. Continuing with JSON submission.`;
+        progressEl.style.background = '#fff3e0';
+        progressEl.style.borderColor = '#e65100';
+      }
+    }
+  }
+
+  const emailHTML = buildEmailHTML({
+    store: selectedStore, storeManagers, personVisiting,
+    visitDate, complianceScore: baseScore,
+    performanceRating: avgRating, performanceLabel: perfLabel,
+    flaggedItems: flagged, submittedAt: new Date().toISOString(),
+    photoFolderUrl
+  });
+
+  const payload = {
+    store: selectedStore,
+    storeManagers,
+    personVisiting,
+    inspectorEmail,
+    visitDate,
+    complianceScore: baseScore,
+    totalScore: baseScore,
+    performanceRating: avgRating,
+    performanceLabel: perfLabel,
+    isCompliant: baseScore >= COMPLIANCE_PASS_SCORE,
+    flaggedCount: flagged.length,
+    flaggedItems: flagged,
+    ratings,
+    notes,
+    questionLabels: buildQuestionLabelMap(currentConfig),
+    questionSections: buildQuestionSectionMap(currentConfig),
+    emailBodyHTML: emailHTML,
+    photoCount: totalPhotoCount,
+    photoSummary,
+    photoFolderUrl,
+    submittedAt: new Date().toISOString()
+  };
+
+  downloadInspectionJSON(payload);
+
+  setTimeout(() => {
+    window.open(SHAREPOINT_UPLOAD_URL, '_blank');
+  }, 500);
+
+  document.getElementById('reviewScreen').innerHTML = `
+    <h2>✅ Inspection Submitted</h2>
+    <p>Your inspection JSON for <strong>${selectedStore}</strong> has been downloaded.</p>
+    <p><strong>Drag the downloaded file into the SharePoint folder</strong> that opened in a new tab to trigger the email flow.</p>
+    <p style="font-size:13px;color:#555;">
+      File: Inspection_${selectedStore}_${payload.visitDate}_${payload.submittedAt.slice(0,10)}.json
+    </p>
+    ${photoFolderUrl ? `
+      <p style="background:#e8f5e9;border:1px solid #2e7d32;padding:10px;border-radius:4px;">
+        📁 <strong>Photos uploaded:</strong> <a href="${photoFolderUrl}" target="_blank">View photo folder in SharePoint</a>
+      </p>` : ''}
+    ${totalPhotoCount > 0 && !photoFolderUrl ? `
+      <p style="background:#fff3e0;border:1px solid #e65100;padding:10px;border-radius:4px;font-size:13px;">
+        ⚠️ Photos could not be uploaded. Please upload manually to SharePoint.
+      </p>` : ''}
+  `;
+
+  localStorage.removeItem(DRAFT_KEY);
+  lockInspection();
+}
+
+// ===============================
+// FINALIZATION HELPERS
+// ===============================
+function lockInspection() {
+  document.querySelectorAll('input, textarea, select, button').forEach(el => {
+    if (el.id !== 'submitInspection') el.disabled = true;
+  });
+}
+
+function downloadInspectionJSON(payload) {
+  const fileName = `Inspection_${payload.store}_${payload.visitDate}_${payload.submittedAt.slice(0,10)}.json`;
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// ===============================
+// QA MODE
+// ===============================
+function renderQAModeButton() {
+  const container = document.getElementById('inspection');
+  if (!container) return;
+  const btn = document.createElement('button');
+  btn.textContent = '✅ QA MODE: Mark All Questions YES';
+  btn.style.cssText = 'margin-bottom:12px;padding:10px;font-size:15px;background:#e3f2fd;border:2px solid #1565c0;cursor:pointer;width:100%;';
+  btn.addEventListener('click', qaFillAllYes);
+  container.prepend(btn);
+}
+
+function qaFillAllYes() {
+  if (!currentConfig) return;
+  if (!selectedStore) { selectedStore = 'Cuyahoga Falls'; document.getElementById('storeSelect').value = selectedStore; }
+  if (!storeManagers.trim()) { storeManagers = 'QA Manager'; document.getElementById('storeManagers').value = storeManagers; }
+  if (!personVisiting.trim()) { personVisiting = 'QA Inspector'; document.getElementById('personVisiting').value = personVisiting; }
+  if (!inspectorEmail.trim()) { inspectorEmail = 'qa@frxdispensaries.com'; document.getElementById('inspectorEmail').value = inspectorEmail; }
+  if (!visitDate) { visitDate = new Date().toISOString().slice(0, 10); document.getElementById('visitDate').value = visitDate; }
+
+  currentConfig.sections.forEach(section => {
+    section.questions.forEach(q => {
+      if (q.type === 'yesno') {
+        ratings[q.id] = 'yes';
+        const r = document.querySelector(`input[name="${q.id}"][value="yes"]`);
+        if (r) r.checked = true;
+      }
+      if (q.type === 'graded') {
+        ratings[q.id] = 3;
+        const s = document.querySelector(`select[name="${q.id}"]`);
+        if (s) s.value = '3';
+      }
+    });
+  });
+
+  saveDraft();
+  updateScore(currentConfig);
+  alert('✅ QA: All fields filled. You can now click Review & Submit.');
+}
+</script>
+</body>
+</html>

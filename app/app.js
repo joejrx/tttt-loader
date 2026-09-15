@@ -61,7 +61,7 @@
     { key: "Total Terpenes", label: "Total Terpenes", type: "num" }
   ];
 
-  var UI_CATEGORIES = ["Flower","Vape","Concentrate"];
+  var UI_CATEGORIES = ["Flower","Pre-Rolls","Vape","Concentrate"];
 
   var allRows = [];
   var lastRawRowCount = 0;
@@ -100,6 +100,7 @@
   function mapToUiCategory(rawCat) {
     var c = String(rawCat || "").toLowerCase();
     if (c === "flower") return "Flower";
+    if (c.indexOf("pre-roll") >= 0 || c.indexOf("preroll") >= 0 || c.indexOf("pre roll") >= 0) return "Pre-Rolls";
     if (c.indexOf("vape") >= 0 || c.indexOf("cartridge") >= 0 || c.indexOf("cartridges") >= 0 || c.indexOf("disposable") >= 0) return "Vape";
     if (c.indexOf("budder") >= 0 || c.indexOf("badder") >= 0 || c.indexOf("sugar") >= 0 || c.indexOf("sauce") >= 0 ||
         c.indexOf("resin") >= 0 || c.indexOf("rosin") >= 0 || c.indexOf("wax") >= 0 || c.indexOf("shatter") >= 0 ||
